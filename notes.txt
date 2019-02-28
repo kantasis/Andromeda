@@ -1,0 +1,34 @@
+TODO:
+	Core:
+		CachedValue
+			Vector:
+				min
+				max
+				range
+				sum
+				average
+				norm
+				var
+				std
+			Matrix:
+				all of the above as Vectors
+				det
+	Vector:
+		conv
+		solve polynomials
+		static random 0-1
+	Matrix
+		eigenvalues
+	Neuron
+		Double learning_rate
+		polar activation function
+	NeuronLayer
+		Double learning_rate
+	MultilayerNetwork
+		Double learning_rate
+	
+_add(a,u,b)
+_add(u,b) = _add(1,u,b)
+_add(a,u) = _add(a,u,1)
+_add(a) = _add(1,1,a)
+_times = _add(a,1,1)
