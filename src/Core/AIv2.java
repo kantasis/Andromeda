@@ -6,6 +6,8 @@
 package Core;
 
 import java.util.Random;
+import java.util.LinkedList;
+
 /**
  *
  * @author GeorgeKantasis
@@ -17,16 +19,7 @@ public class AIv2 {
      */
     public static void main(String[] args) {
         
-        Double x=1d;
-        Double y=x;
-        Double z=y;
-        
-        
-        
-        System.out.println(z);
-        y=3d;
-        System.out.println(z);
-        
+        Main.main(args);
         
     }
     

@@ -1,10 +1,12 @@
-package Core;
+package MachineLearning;
 
+import Math.Vector;
+import Math.Matrix;
 import java.util.Random;
 
 public class MultilayerNetwork extends Classifier {
     
-    private final NeuronLayer[] _layers;
+    private NeuronLayer[] _layers;
     
     public MultilayerNetwork(int inputs,int...neuronCounts){
         // (1000,2) one layer, 1000 inputs, 2 neurons
@@ -14,8 +16,11 @@ public class MultilayerNetwork extends Classifier {
         for (int i=0;i<neuronCounts.length;i++){
             _layers[i]=new NeuronLayer(inputs,neuronCounts[i]);
             inputs=neuronCounts[i];
-            //System.out.printf("Layer #%d: [%d %d]\n",i,_layers[i].getInputCount(), _layers[i].getOutputCount());
         }
+    }
+    
+    public MultilayerNetwork(NeuronLayer[] layers){
+        _layers=layers;
     }
     
     public NeuronLayer getLayer(int i){
@@ -52,17 +57,13 @@ public class MultilayerNetwork extends Classifier {
         return output;
     }
     
-    public void train(Vector pattern, Vector target){
-        _train(pattern,target);
-    }
     
-    public double _train(Vector pattern, Vector target){
+    public void train(Vector pattern, Vector target){
         assert pattern.getLength()==getInputCount(): String.format("Incompatible input size (%d, %d)",pattern.getLength(),getInputCount());
         assert target.getLength()==getOutputCount(): String.format("Incompatible target size (%d, %d)",target.getLength(),getOutputCount());
         // TODO: maybe some optimization can be done here cause train calls classify again
       
         int L = getLayerCount();
-        double delta;
         Vector[] layer_outputs = new Vector[L];
         Vector[] layer_inputs = new Vector[L];
         
@@ -72,61 +73,52 @@ public class MultilayerNetwork extends Classifier {
                 layer_inputs[i]=layer_outputs[i-1];
             layer_outputs[i]=getLayer(i).classify(layer_inputs[i]);
         }
-        
-        delta = getLayer(L-1)._train(layer_inputs[L-1], target);
-        Vector layer_error = layer_outputs[L-1].add(1,target,-1);
+        Vector prevError_vector = getLayer(L-1).train(layer_inputs[L-1], target);
+        Vector target_vector;
         
         for (int i=L-2;i>=0;i--){
-            NeuronLayer layer = getLayer(i);
-            layer_error = getLayer(i+1).reverse(layer_error);
-            Vector layer_target = layer_outputs[i].add(1,layer_error,-1);
-            //TODO: Fix this ugly shit
-            delta+=layer._train(layer_inputs[i], layer_target);
-        }
-        return delta;
-    }
-    
-    public double[] getInfluence(int layer,int neuron){
-        if (layer==this.getLayerCount()-1)
-            return new double[]{1};
-        
-        double[] influence = new double[getLayer(layer+1).getNeuronCount()];
-        for (int i=0;i<influence.length;i++){
-            double sum = getLayer(layer+1).getNeuron(i).getBias();
-            for(int j=0;j<getLayer(layer+1).getNeuron(i).getInputCount();j++)
-                sum+=Math.abs(getLayer(layer+1).getNeuron(i).getWeight(j));
-            influence[i]=getLayer(layer+1).getNeuron(i).getWeight(neuron)/sum*100;
+            //prevError_vector.multiplyElements(getLayer(i).getActivationFunction()._fast_derivative(layer_outputs[i]));
+            target_vector = prevError_vector.getAdd(1, layer_outputs[i], 1);
+            prevError_vector = getLayer(i).train(layer_inputs[i], target_vector );
         }
         
-        return influence;
+        
+        return;
     }
-    
+
     public static void main(String[] args) {
-        MultilayerNetwork neu = new MultilayerNetwork(2,3,3);
+        MultilayerNetwork neu = new MultilayerNetwork(2,30,5);
+        neu.setTrainingRate(0.1);
+        
         Vector[] inputs = {
-            new Vector(0,0),
-            new Vector(0,1),
-            new Vector(1,0),
-            new Vector(1,1)
+            new Vector(0d,0d),
+            new Vector(0d,1d),
+            new Vector(1d,0d),
+            new Vector(1d,1d)
         };
+        
         Vector[] outputs = {
-            new Vector(0d,0d,0d),
-            new Vector(0d,1d,1d),
-            new Vector(0d,0d,1d),
-            new Vector(1d,0d,0d)
+            new Vector(1d,0d,0d,0d,0d),
+            new Vector(0d,1d,0d,0d,1d),
+            new Vector(0d,0d,1d,0d,1d),
+            new Vector(0d,0d,0d,1d,0d)
         };
-        double d=10;
-        int count=0;
-        while ( count < 1e3 ){
-            int idx=count%inputs.length;
-            double delta = neu._train(inputs[idx],outputs[idx]);
-            d+=delta;
-            count++;
-            System.out.printf("%f\t%f\n",d,d/count);
+        
+        Random rnd = new Random();
+        
+        for (int i=0; i<1e4;i++){
+            int idx = rnd.nextInt(inputs.length);
+            //System.out.print("---");
+            neu.train(inputs[idx],outputs[idx]);
+            
+            Vector error = neu.classify(inputs[idx]).diff(outputs[idx]);
+            System.out.printf("\t%5.2f\n",error.norm());
         }
-        System.out.printf("%d\t%.5f\n",count,d);
-        for(int i=0;i<inputs.length;i++)
-            System.out.printf("In: %s\ttgt: %s\tout: %s\n",inputs[i],outputs[i],neu.classify(inputs[i]));
+        
+        for (Vector input : inputs){
+            neu.classify(input).show();//._apply((d)->{return Math.round(d);}).show();
+        }
+        
     }
     
     public void present(Vector[] patterns, Vector[] targets){
@@ -135,16 +127,18 @@ public class MultilayerNetwork extends Classifier {
             Vector output = classify(patterns[i]);
             System.out.printf("%s  -> %s\n",patterns[i],output);
             System.out.printf("%s\n",targets[i]);
-            System.out.printf("%s\n",targets[i].add(output, -1));
+            System.out.printf("%s\n",targets[i].getAdd(1,output, -1));
             System.out.printf("------\n");
         }
         
     }
     
+    /*
     public void teach(MultilayerNetwork that,Vector pattern){
         Vector target = this.classify(pattern);
         that.train(pattern, target);
     }
+    */
     
     /*
     public double[] evaluate(double[][] patterns, double[][] target){
@@ -159,5 +153,5 @@ public class MultilayerNetwork extends Classifier {
             result[j]=Math.sqrt(result[j]);
         return result;
     }
-        */
+      */
 }

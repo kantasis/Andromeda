@@ -1,5 +1,6 @@
-package Core;
+package Graphics;
 
+import Math.Vector;
 import java.awt.*;
 import java.util.Random;
 import javax.swing.*;
@@ -17,11 +18,19 @@ public class Figure extends JFrame{
         _drawable.add(_canvas);
         setSize(_WIDTH, _HEIGHT);
         show();
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
     }
     
     public void plot(Vector x, Vector y){
         _canvas.setData(x,y);
+    }
+    
+    public void plot(Vector y){
+        Vector x = new Vector(y.getLength());
+        for(int i=0;i<x.getLength();i++)
+            x.set(i,i);
+        this.plot(x,y);
     }
     
     public void plot(double[] x, double[] y){

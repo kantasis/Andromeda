@@ -1,12 +1,13 @@
-package Core;
+package MachineLearning;
 
+import Math.Vector;
 import java.util.Random;
 import java.util.ArrayList;
 
 public abstract class Classifier {
     
     public abstract Vector classify(Vector pattern);
-    public abstract void train(Vector pattern, Vector target);
+    //public abstract void train(Vector pattern, Vector target);
     public abstract int getInputCount();
     public abstract int getOutputCount();
 

@@ -5,6 +5,9 @@
  */
 package Core;
 
+import MachineLearning.MultilayerNetwork;
+import Math.Vector;
+import Graphics.Renderable;
 import java.awt.Graphics2D;
 
 /**
@@ -36,7 +39,7 @@ public class Zigg implements Renderable{
         memory=new double[2];
         environment=env;
         avgMem = new Vector(5);
-        avgMem._add(1);
+        avgMem.add(1);
     }
     
     public Zigg(Environment env, int x,int y){
@@ -93,7 +96,7 @@ public class Zigg implements Renderable{
     public void update(){
         pattern = perceive();
         desicion = brain.classify(pattern);
-        brain._train(pattern, desicion);
+        brain.train(pattern, desicion);
         
         double acceleration = desicion.get(0)*2-1;
         double delta_theta = desicion.get(1)-desicion.get(2);
@@ -126,7 +129,7 @@ public class Zigg implements Renderable{
                 target.set(i, Math.round(tgt));
             }
                 
-        brain._train(pattern, target);
+        brain.train(pattern, target);
         
         //System.out.println(delta);
     }

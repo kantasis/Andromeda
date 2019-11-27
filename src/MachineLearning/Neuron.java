@@ -1,5 +1,6 @@
-package Core;
+package MachineLearning;
 
+import Math.Vector;
 import java.util.Random;
 
 public class Neuron extends Classifier{
@@ -7,6 +8,7 @@ public class Neuron extends Classifier{
     private double _bias;
     private double _a=1;
     private Double _trainingRate=1d;
+    private ActivationFunction _activation;
  
     public final double getWeight(int i){
         return _weights.get(i);
@@ -46,28 +48,19 @@ public class Neuron extends Classifier{
     
     public Neuron(int inputCount){
         _weights = new Vector(inputCount);
+        _activation = new ActivationFunctions.Sigmoid(1);
         Random rnd = new Random();
         setBias(rnd.nextDouble()*2-1.0);
         for( int i=0;i< getInputCount();i++)
             setWeight(i, rnd.nextDouble()*2-1.0);
     }
     
-    public double activationFunction(double v){
-        return 1.0/(1+Math.exp(-v*this._a));
-    }
-    
-    public double activationDerivative(double v){
-        double t=activationFunction(v);
-        return t*(1-t);
-    }
-    
-    
     public Vector classify(Vector pattern){
         assert pattern.getLength()==getInputCount(): String.format("Incompatible input size (%d, %d)",pattern.getLength(),getInputCount());
         Vector result = new Vector(1);
         double temp=getBias();
         temp+=pattern.dot(_weights);
-        result.set(0,this.activationFunction(temp));
+        result.set(0,this._activation.evaluate(temp));
         return result;
     }
     
@@ -82,10 +75,10 @@ public class Neuron extends Classifier{
         
         double error = target - classify(pattern).get(0);
         double morsel = getBias() + pattern.dot(_weights);
-        morsel=error*activationDerivative(morsel);
+        morsel=error*_activation.derivative(morsel);
         setBias(getBias()+morsel*_trainingRate);
-        Vector delta=pattern.times(morsel);
-        _weights._add(1, delta, _trainingRate);
+        Vector delta=pattern.multiply(morsel);
+        _weights.add(1, delta, _trainingRate);
         return delta.norm();
     }
     
