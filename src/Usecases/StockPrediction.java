@@ -96,7 +96,7 @@ public class StockPrediction {
             */
             pattern_arr.add(price);
             pattern = new Vector(pattern_arr);
-            pattern.times(1.0/pattern.sum());
+            pattern.multiply(1.0/pattern.sum().getPrimitive());
             
             //pattern.show();
             output = 1.0;

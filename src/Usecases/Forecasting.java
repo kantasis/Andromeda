@@ -39,8 +39,8 @@ public class Forecasting {
         int N=data_arr.size();
         int W=20;
         Vector data = new Vector(data_arr);
-        double normalizer = data.max();
-        data.times(1.0/normalizer);
+        double normalizer = data.max().getPrimitive();
+        data.multiply(1.0/normalizer);
         
         double[] memory = new double[W];
         int mem_i=0;
@@ -55,7 +55,7 @@ public class Forecasting {
             memory[i]=0;
         
         for (int i=0;i<N;i++){
-            double value = data.get(i);
+            double value = data.get(i).getPrimitive();
             
             //  Naive
             int prev_index = Math.max(0,i-1);
@@ -72,15 +72,15 @@ public class Forecasting {
             for(int j=0;j<W;j++){
                 pattern.set(j,memory[(mem_i+j)%W]);
             }
-            forecast = neu.classify(pattern).get(0);
+            forecast = neu.classify(pattern).get(0).getPrimitive();
             neural.set(i, forecast);
         }
         
         Vector naive_err = data.diff(naive);
         for (int i=0;i<N;i++){
-            System.out.print(data.get(i)*normalizer+", ");
-            System.out.print(naive.get(i)*normalizer+", ");
-            System.out.print(neural.get(i)*normalizer+"\n");
+            System.out.print(data.get(i).getPrimitive()*normalizer+", ");
+            System.out.print(naive.get(i).getPrimitive()*normalizer+", ");
+            System.out.print(neural.get(i).getPrimitive()*normalizer+"\n");
         }
         
         System.out.println("MSE:\t"+naive_err.norm());

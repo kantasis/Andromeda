@@ -1,5 +1,7 @@
 package Math;
 
+import Core.Logger;
+import Math.Operatables.Real;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -11,6 +13,7 @@ import java.util.Random;
 /**
  *
  * @author GeorgeKantasis
+ * Note: This class is considered a Column Matrix
  */
 public class Vector extends Matrix  {
     
@@ -24,8 +27,7 @@ public class Vector extends Matrix  {
     public static final int CACHE_NORM=5;
     public static final int CACHE_PRODUCT=7;
     
-    private transient DataStructures.Dictionary<Integer,Double> _cache;
-
+    
     /**
      * Simple constructor.
      * Creates a new Vector object with size n
@@ -36,7 +38,6 @@ public class Vector extends Matrix  {
         super(n,1);
         assert n>0 : String.format("Cannot Initialize an empty Vector");
         
-        _cache=new DataStructures.Dictionary();
     }
     
     /**
@@ -46,6 +47,18 @@ public class Vector extends Matrix  {
      * @param x the array of the elements in the vector
      */
     public Vector(double...x){
+        this(x.length);
+        for (int i=0;i<this.getLength();i++)
+            this.set(i, x[i]);
+    }
+    
+    /**
+     * Vector constructor given an array of Reals.
+     * Creates a new Vector instance with the elements of the given array
+     * 
+     * @param x the array of the elements in the vector
+     */
+    public Vector(Real...x){
         this(x.length);
         for (int i=0;i<this.getLength();i++)
             this.set(i, x[i]);
@@ -71,9 +84,9 @@ public class Vector extends Matrix  {
      * @return a string object that represents the vector
      */
     public String toString(){
-        String result=String.format("(%3d)[ %6.2f",this.getLength(),this.get(0));
+        String result=String.format("(%3d)[ %s",this.getLength(),this.get(0));
         for (int i=1;i<this.getLength();i++){
-            result+=String.format(", %.2f",this.get(i));
+            result+=String.format(", %s",this.get(i));
         }
         return result+" ]";
     }
@@ -83,7 +96,7 @@ public class Vector extends Matrix  {
      * 
      */
     public void show(){
-        System.out.println(this.toString());
+        show("");
     }
     
     /**
@@ -92,8 +105,8 @@ public class Vector extends Matrix  {
      * @param title a descriptive name for the vector
      */
     public void show(String title){
-        System.out.print(title+":\t");
-        show();
+        Logger.log("%s %s",title,this);
+        
     }
 
     /**
@@ -111,20 +124,26 @@ public class Vector extends Matrix  {
      * @param i element index
      * @return the value of the vector at index i
      */    
-    public double get(int i){
+    public Real get(int i){
         return get(i,0);
     }
+
+    /**
+     * Set the value of the vector at the specified index
+     * 
+     * @param i element index
+     */
+    public Vector set(int i, Real v){
+        return (Vector) set(i,0,v);
+    } 
     
     /**
      * Set the value of the vector at the specified index
      * 
      * @param i element index
      */
-    public void set(int i, double v){
-        this.assertIndexBound(i);
-        set(i,0,v);
-        //  here we can do a more smart updateCache, something like "if (newVal>max) update max;"
-        _cache.clear();
+    public Vector set(int i, double v){
+        return (Vector) set(i,0,v);
     } 
     
     /**
@@ -133,11 +152,11 @@ public class Vector extends Matrix  {
      * @param that the other vector
      * @return the real value of the dot product
      */    
-    public double dot(Vector that){
+    public Real dot(Vector that){
         assertSizeAlignment(that);
-        double result = 0;
+        Real result = Real.zero();
         for (int i=0;i<this.getLength();i++)
-            result+=this.get(i)*that.get(i);
+            result.add((Real)this.get(i).getMultiply(that.get(i)));
         return result;
     }
     
@@ -146,13 +165,8 @@ public class Vector extends Matrix  {
      * 
      * @return the min value of the vector
      */    
-    public double min(){
-        int idx = _cache.indexOf(CACHE_MIN);
-        if (idx!=-1)
-            return _cache.getPair(idx).getValue();
-        
-        double result=this.getMinVector().get(0);
-        _cache.set(CACHE_MIN, result);
+    public Real min(){
+        Real result=this.getMinVector().get(0);
         return result;    
     }
 
@@ -161,13 +175,8 @@ public class Vector extends Matrix  {
      * 
      * @return the max value of the vector
      */    
-    public double max(){
-        int idx = _cache.indexOf(CACHE_MAX);
-        if (idx!=-1)
-            return _cache.getPair(idx).getValue();
-        
-        double result=this.getMaxVector().get(0);
-        _cache.set(CACHE_MAX, result);
+    public Real max(){
+        Real result=this.getMaxVector().get(0);
         return result;
     }
     
@@ -178,9 +187,9 @@ public class Vector extends Matrix  {
      */    
     public int argMax(){
         int result = 0;
-        double max=get(result);        
+        Real max=get(result);        
         for (int i=1;i<getLength();i++)
-            if (get(i)>max){
+            if (this.get(i).getPrimitive()>max.getPrimitive()){
                 result=i;
                 max=get(result);
             }
@@ -192,13 +201,8 @@ public class Vector extends Matrix  {
      * 
      * @return the element-wise sum of the vector
      */
-    public double sum(){
-        int idx = _cache.indexOf(CACHE_SUM);
-        if (idx!=-1)
-            return _cache.getPair(idx).getValue();
-        
-        double result=this.getSumVector().get(0);
-        _cache.set(CACHE_SUM, result);
+    public Real sum(){
+        Real result=this.getSumVector().get(0);
         return result;
     }
     
@@ -207,13 +211,8 @@ public class Vector extends Matrix  {
      * 
      * @return the element-wise sum of the vector
      */
-    public double product(){
-        int idx = _cache.indexOf(CACHE_PRODUCT);
-        if (idx!=-1)
-            return _cache.getPair(idx).getValue();
-        
-        double result=this.getProductVector().get(0);
-        _cache.set(CACHE_SUM, result);
+    public Real product(){
+        Real result=this.getRowProduct().get(0);
         return result;
     }
     
@@ -222,15 +221,11 @@ public class Vector extends Matrix  {
      * 
      * @return the Eucledian norm of the vector
      */
-    public double norm(){
-        int idx = _cache.indexOf(CACHE_NORM);
-        if (idx!=-1)
-            return _cache.getPair(idx).getValue();
-        double result=0;
+    public Real normsquared(){
+        Real result= Real.zero();
         for (int i=0;i<getLength();i++)
-            result+=get(i)*get(i);
-        _cache.set(CACHE_NORM, result);
-        return Math.sqrt(result);
+            result.add(get(i).copy().power(2));
+        return result;
     }
     
     /**
@@ -238,8 +233,8 @@ public class Vector extends Matrix  {
      * 
      * @return the average value of the elements in the vector
      */
-    public double average(){
-        return getSumVector().get(0)/getLength();
+    public Real average(){
+        return getSumVector().get(0).multiply(1.0/getLength());
     }
     
     /**
@@ -247,8 +242,8 @@ public class Vector extends Matrix  {
      * 
      * @return the std-dev of the vector
      */
-    public double std(){
-        double result = Math.sqrt(Math.pow(norm(),2)/getLength() - Math.pow(average(),2) );
+    public Real std(){
+        Real result = this.normsquared().add(this.average().power(2).multiply(-1.0));
         return result;
     }
     
@@ -264,24 +259,7 @@ public class Vector extends Matrix  {
      */
     public Vector add(double this_v, Vector that, double that_v){
         assertSizeAlignment(that);
-        for (int i=0;i<getLength();i++)
-            this.set(i, this.get(i)*this_v+that.get(i)*that_v);
-        return this;
-    }
-    
-    /**
-     * Return a nwe object with the 
-     * weighted sum of this vector and the argument vector.
-     * Multiplies the values of this vector by this_v and adds the values of
-     * the argument vector multiplied by that_v. The result is stored in a new vector
-     * 
-     * @param this_v LHS factor
-     * @param that the argument vector
-     * @param that_v RHS factor
-     * @return a new vector with the sum
-     */
-    public Vector getAdd(double this_v, Vector that, double that_v){
-        return this.copy().add(this_v, that, that_v);
+        return (Vector) this.add(this_v,that,that_v);
     }
     
     /** 
@@ -291,23 +269,9 @@ public class Vector extends Matrix  {
      * @return this matrix
      */
     public Vector add(double value){
-        for (int i=0;i<getLength();i++)
-            this.set(i, this.get(i)+value);
-        return this;
+        return (Vector) add(new Real(value));
     }
-        
-    /**
-     * Multiply all the values of the vector by a factor
-     * 
-     * @param factor the factor by which to multiply
-     * @return this vector
-     */
-    public Vector times(double factor){
-        for (int i=0;i<getLength();i++)
-            this.set(i, this.get(i)*factor);
-        return this;
-    }
-    
+            
     /**
      * Multiply the elements of this matrix by the argument vector
      * 
@@ -317,7 +281,7 @@ public class Vector extends Matrix  {
     public Vector multiplyElements(Vector that){
         this.assertSizeAlignment(that);
         for (int i=0;i<getLength();i++)
-            this.set(i, this.get(i)*that.get(i));
+            this.get(i).multiply(that.get(i));
         return this;
     }
     
@@ -331,57 +295,14 @@ public class Vector extends Matrix  {
         Vector result = this.copy();
         return result.multiplyElements(that);
     }
-    
-    /**
-     * Return a new vector with the product of this vector by the factor
-     * 
-     * @param factor the factor of the multiplication
-     * @return the product matrix
-     */
-    public Vector multiply(double factor){
-        return this.copy().times(factor);
-    }
-    
+        
     /**
      * Return a copy of this matrix
      * 
      * @return a matrix with the same elements as this one
      */
     public Vector copy(){
-        Vector result = new Vector(this.getLength());
-        for (int i=0;i<getLength();i++)
-            result.set(i, this.get(i));
-        return result;
-    }
-    
-    /**
-     * Assertion whether this vector and another vector have the same size
-     */
-    public void assertSizeAlignment(Vector that){
-        assert this.getLength()==that.getLength() : String.format("Incompatible Vectors (%d, %d)",this.getLength(),that.getLength());
-    }
-    
-    /**
-     * Assertion whether the index is within the length of the vector
-     * 
-     * @param i the element index
-     */
-    public void assertIndexBound(int i){
-        assert i<getLength() && i>=0 : String.format("Trying to Access element %3d ( / %3d )",i,getLength());
-    }
-    
-    /**
-     * Compare this vector with another one
-     * 
-     * @param that the other vector
-     * @return boolean value of the comparison
-     */
-    public boolean equals(Vector that){
-        assertSizeAlignment(that);
-        for (int i=0;i<getLength();i++)
-            if (this.get(i)!=that.get(i))
-                return false;
-        return true;
+        return (Vector) super.copy();
     }
     
     /**
@@ -412,8 +333,11 @@ public class Vector extends Matrix  {
      */
     public Vector getDiff(){
         Vector result = new Vector(this.getLength()-1);
-        for (int i=0; i<result.getLength(); i++)
-            result.set(i, this.get(i+1)-this.get(i) );
+        for (int i=0; i<result.getLength(); i++){
+            Real curr = this.get(i+1);
+            Real minus_prev = this.get(i).copy().multiply(-1.0);
+            result.get(i).add(curr).add(minus_prev);
+        }
         return result;
     }     
     
@@ -426,7 +350,7 @@ public class Vector extends Matrix  {
         Vector result = new Vector(this.getLength());
         result.set(0,this.get(0));
         for (int i=1; i<result.getLength(); i++)
-            result.set(i, this.get(i-1)+this.get(i) );
+            result.get(i).add(result.get(i-1)).add(this.get(i));
         return result;
     }
     
@@ -436,9 +360,10 @@ public class Vector extends Matrix  {
      * @param p the exponent
      * @return this matrix
      */
-    public Vector power(float p){
+    public Vector power(int p){
         for (int i=0;i<this.getLength();i++)
-            this.set(i, Math.pow(this.get(i),p));
+            this.get(i).power(p);
+            //this.set(i, Math.pow(this.get(i).get(),p));
         return this;
     }
     
@@ -448,7 +373,7 @@ public class Vector extends Matrix  {
      */
     public Vector abs(){
         for (int i=0;i<this.getLength();i++)
-            this.set(i, Math.abs(this.get(i)));
+            this.set(i, Math.abs(this.get(i).getPrimitive()));
         return this;
     }
     
@@ -467,7 +392,7 @@ public class Vector extends Matrix  {
     public double[] toArray(){
         double[] result = new double[this.getLength()];
         for (int i=0;i<result.length;i++)
-            result[i]=this.get(i);
+            result[i]=this.get(i).getPrimitive();
         return result;
     }
     
@@ -492,7 +417,7 @@ public class Vector extends Matrix  {
      */
     public Vector _apply(Function f){
         for (int i=0;i<this.getLength();i++)
-            this.set(i, f.run(this.get(i)));
+            this.set(i, f.run(this.get(i).getPrimitive()));
         return this;
     }
     
@@ -525,15 +450,30 @@ public class Vector extends Matrix  {
     public Vector getConv(Vector that){
         Vector result = new Vector(this.getLength()+that.getLength()-1);
         for (int i=0; i<result.getLength(); i++){
-            double sum=0;
+            Real sum=Real.zero();
             int start = Math.max(0, i-that.getLength()+1);
             int stop = Math.min(this.getLength()-1,i);
             for (int j=start;j<=stop;j++)
-                sum+=this.get(j)*that.get(i-j);
+                sum.add((Real)this.get(j).getMultiply(that.get(i-j)));
+                //sum+=this.get(j)*that.get(i-j);
             result.set(i,sum);
 
         }
         return result;
+    }
+    
+    public boolean isUnit(){
+        boolean unit_found = false;
+        for(int i=0;i<this.getLength();i++){
+            if (get(i).isUnit())
+                if (!unit_found)
+                    unit_found=true;
+                else
+                    return false;
+            else if (!get(i).isZero())
+                return false;
+        }
+        return unit_found;
     }
 
     /**

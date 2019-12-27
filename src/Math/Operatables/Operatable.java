@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package Math;
+package Math.Operatables;
 
 /**
  *
@@ -11,8 +11,12 @@ package Math;
  */
 public interface Operatable <T extends Operatable<T> > {
 
-     public Operatable getSum(T x);
-     public Operatable getProduct(T x);
-     public Operatable getProduct(Double x);
+    public T add(T x);
+    public T getProduct(T x);
+    public T multiply(Real x);
+    public T copy();
     
+    public boolean isZero();
+    public boolean isUnit();
+     
 }

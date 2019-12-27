@@ -1,128 +1,76 @@
 package Math;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import Core.Logger;
+import Math.Operatables.GenericMatrix;
+import Math.Operatables.Real;
+import java.util.ArrayList;
 import java.util.Random;
 
-public class Matrix implements java.io.Serializable {
+public class Matrix extends GenericMatrix<Real> {
     
-    private double[][] _data;
-    private Matrix _mirror;
-  
+    private transient Matrix _augmented;
+    
     /**
-     * Constructor for the matrix class
-     * Create a new matrix defining the number of rows and columns
+     * Constructor for the Matrix class
+     * Create a new Matrix defining the number of rows and columns
      * 
      * @param rows the number of rows in the matrix
      * @param columns the number of columns in the matrix
      */
     public Matrix(int rows,int columns){
-        _data=new double[rows][columns];
+        super(rows,columns);
+        for(int i=0;i<getRows();i++)
+            for(int j=0;j<getColumns();j++)
+                set(i,j,new Real(0.0));                
     }
     
     /**
-     * Constructor for the matrix class
+     * Constructor for the Matrix class
      * Create a new matrix defining the data array. Note that it creates a new
      * array for that purpose
      * 
      * @param data the 2D array that contains the data of the new matrix
      */
     public Matrix(double[][] data){
-        this(data.length,data[0].length);
+        super(data.length,data[0].length);
         for(int i=1;i<data.length;i++)
             assert data[i-1].length==data[i].length : String.format("Can't create matrix out of array. Inconsistent dimensions");
         for(int i=0;i<data.length;i++){
             for(int j=0;j<data.length;j++){
-                _data[i][j]=data[i][j];
+                this.set(i,j,new Real(data[i][j]));
             }
         }
     }
-        
-    /**
-     * Get the number of columns of this matrix
-     * 
-     * @returns an integer representing the number of columns in the matrix
-     */
-    public final int getColumns(){
-        return _data[0].length;
+    
+    public Matrix set(int i, int j, double v){
+        return (Matrix) this.set(i, j, new Real(v));
     }
     
     /**
-     * Get the number of rows of this matrix
-     * 
-     * @returns an integer representing the number of rows in the matrix
-     */
-    public final int getRows(){
-        return _data.length;
-    }
-    
-    /**
-     * Get the mirrored matrix.
+     * Get the augmented matrix.
      * Highly specialized function, this one returns the matrix which will
      * undergo the same row operations as this one whenever rowOperation 
-     * is called
+     * is invoked
+     * TODO: See if I can get rid of this shit
      * 
-     * @returns the mirror matrix
+     * @returns the augmented matrix
      */
-    public Matrix getMirror(){
-        return _mirror;
+    public Matrix getAugmented(){
+        return _augmented;
     }
     
     /**
-     * Sets the mirrored matrix.
+     * Sets a matrix to be augmented by this one.
      * Highly specialized function, this one sets the matrix which will
      * undergo the same row operations as this one whenever rowOperation
      * is called
      * 
-     * @param that the mirrored matrix
+     * @param that the augmented matrix
      * @return this
      */
-    public Matrix setMirror(Matrix that){
-        _mirror = that;
+    public Matrix setAugmented(Matrix that){
+        _augmented = that;
         return this;
-    }
-    
-    
-    /**
-     * Return the value of the matrix at the specified index
-     * 
-     * @param i row index
-     * @param j column index
-     * @return the value of the matrix at row i, column j
-     */
-    public double get(int i, int j){
-        assertIndexBound(i,j);
-        return _data[i][j];
-    }
-    
-    /**
-     * Sets the value of the matrix at the specified index.
-     * 
-     * @param i row index
-     * @param j column index
-     * @param v the value
-     * @return this
-     */
-    public Matrix set(int i, int j, double v){
-        assertIndexBound(i,j);
-        _data[i][j]=v;
-        return this;
-    }
-    
-    /**
-     * Present the data of the matrix in the console
-     * 
-     */
-    public void show(){
-        System.out.printf("[%d %d]\n",getRows(),getColumns());
-        for (int i=0;i<getRows();i++){
-            for (int j=0;j<getColumns();j++)
-                System.out.printf("%5.2f ",get(i,j));
-            System.out.printf("\n");
-        }
     }
     
     /**
@@ -133,14 +81,12 @@ public class Matrix implements java.io.Serializable {
      * @param that the other matrix
      * @param that_v the factor that matrix will be multiplied by
      * @return this
-     */
-    public Matrix add(double this_v, Matrix that, double that_v){
+    */ 
+    public Matrix weightedSum(Real this_v, Matrix that, Real that_v){
         assertSizeAlignment(that);
-        for (int i=0;i<getRows();i++)
-            for (int j=0;j<getColumns();j++)
-                this.set(i,j,this.get(i, j)*this_v+that.get(i, j)*that_v);
-        return this;
+        return (Matrix) this.multiply(this_v).add(that.getMultiply(that_v));
     }
+    
     
     /**
      * Add a vector to each row.
@@ -150,12 +96,11 @@ public class Matrix implements java.io.Serializable {
      * @param values the vector to add
      * @return this
      */
-    public Matrix sum(Vector values){
+    public Matrix add(Vector values){
         assert values.getLength()==this.getColumns() : String.format("Incompatible sizes %s / %s",this.getColumns(),values.getLength());
-    
         for (int i=0;i<getRows();i++)
             for (int j=0;j<getColumns();j++)
-                this.set(i,j,this.get(i, j)+values.get(j));
+                this.get(i, j).add(values.get(j));
         return this;
     }
     
@@ -166,22 +111,19 @@ public class Matrix implements java.io.Serializable {
      * @return this
      */
     public Matrix add(double value){
-        for (int i=0;i<getRows();i++)
-            for (int j=0;j<getColumns();j++)
-                this.set(i,j,this.get(i, j)+value);
-        return this;
+        return this.add(new Real(value));
     }
-    
+
     /**
-     * Multiply each element by a value.
+     * Add a value to each element.
      * 
-     * @param factor the value to multiply by
+     * @param value the value to add
      * @return this
      */
-    public Matrix multiply(double factor){
+    public Matrix add(Real value){
         for (int i=0;i<getRows();i++)
             for (int j=0;j<getColumns();j++)
-                this.set(i,j,this.get(i, j)*factor);
+                this.get(i,j).add(value);
         return this;
     }
     
@@ -193,9 +135,9 @@ public class Matrix implements java.io.Serializable {
     public Vector getSumVector(){
         Vector result = new Vector(this.getColumns());
         for (int j=0;j<this.getColumns();j++){
-            double sum=0;
+            Real sum=Real.zero();
             for (int i=0;i<getRows();i++)
-                sum+=this.get(i,j);
+                sum.add(this.get(i,j));
             result.set(j,sum);
         }
         return result;
@@ -206,12 +148,12 @@ public class Matrix implements java.io.Serializable {
      * 
      * @return the vector product of this matrix
      */
-    public Vector getProductVector(){
+    public Vector getRowProduct(){
         Vector result = new Vector(this.getColumns());
         for (int j=0;j<this.getColumns();j++){
-            double sum=1;
+            Real sum= Real.unit();
             for (int i=0;i<getRows();i++)
-                sum*=this.get(i,j);
+                sum.multiply(this.get(i,j));
             result.set(j,sum);
         }
         return result;
@@ -223,7 +165,7 @@ public class Matrix implements java.io.Serializable {
      * @return the vector average of this matrix
      */
     public Vector getAverageVector(){
-        return this.getSumVector().multiply(1f/this.getRows());
+        return (Vector) this.getSumVector().multiply(1.0/this.getRows());
     }
       
     /**
@@ -234,9 +176,9 @@ public class Matrix implements java.io.Serializable {
     public Vector getMaxVector(){
         Vector result = new Vector(this.getColumns());
         for (int j=0;j<this.getColumns();j++){
-            double max=this.get(0,j);
+            Real max=this.get(0,j);
             for (int i=1;i<getRows();i++)
-                if (this.get(i,j)>max)
+                if (this.get(i,j).getPrimitive()>max.getPrimitive())
                     max=this.get(i,j);
             result.set(j,max);
         }
@@ -251,147 +193,12 @@ public class Matrix implements java.io.Serializable {
     public Vector getMinVector(){
         Vector result = new Vector(this.getColumns());
         for (int j=0;j<this.getColumns();j++){
-            double min=this.get(0,j);
+            Real min=this.get(0,j);
             for (int i=1;i<getRows();i++)
-                if (this.get(i,j)<min)
+                if (this.get(i,j).getPrimitive()<min.getPrimitive())
                     min=this.get(i,j);
             result.set(j,min);
         }
-        return result;
-    }
-    
-    /**
-     * Assertion whether this matrix and another matrix have the same size
-     */
-    public void assertSizeAlignment(Matrix that){
-        assert  this.getSize().equals( that.getSize()) : String.format("Incompatible Matrices %s / %s",this.getSize(),that.getSize());
-    }
-    
-    /**
-     * Compare the two matrices
-     * 
-     * @return boolean result of the comparison
-     */
-    public boolean equals(Matrix that){
-        // TODO: make the matrix class implement comparable
-        assertSizeAlignment(that);
-        for (int i=0;i<getRows();i++)
-            for (int j=0;j<getColumns();j++)
-                if (this.get(i,j)!=that.get(i, j))
-                    return false;
-        return true;
-    }
-    
-    /**
-     * Get the size of the matrix
-     * 
-     * @return a vector that holds rows and columns
-     */
-    public Vector getSize(){
-        return new Vector((double) this.getRows(), (double) this.getColumns());
-    }
-    
-    /**
-     * Assertion whether the arguments are within the matrice's bounds
-     * 
-     * @param i the row index
-     * @param j the column index
-     */
-    public void assertIndexBound(int i,int j){
-        assert i<getRows() && i>=0: String.format("Trying to access row %3d (/%3d)",i,getRows());
-        assert j<getColumns() && j>=0 : String.format("Trying to access column %3d ( /%3d )",i,getColumns());        
-    }
-    
-    /**
-     * Perform matrix multiplication
-     * 
-     * @param that the other matrix
-     * @return the result of the multiplication
-     */
-    public Matrix getMult(Matrix that){
-        assert this.getColumns()==that.getRows() : String.format("Incompatible matrices to multiply ( %s / %s )",this.getSize(),that.getSize());
-        Matrix result = new Matrix(this.getRows(),that.getColumns());
-        for (int i=0;i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++){
-                double sum=0;
-                for (int k=0;k<this.getColumns();k++)
-                    sum+=this.get(i,k)*that.get(k,j);
-                result.set(i,j,sum);
-            }
-        return result;
-    }
-    
-    /**
-     * Transpose this matrix
-     * 
-     * @return the transposed matrix
-     */
-    public Matrix getTransposed(){
-        Matrix result = new Matrix(this.getColumns(),this.getRows());
-        for (int i=0;i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++)
-                result.set(i, j, this.get(j,i));
-        return result;   
-    }
-    
-    /**
-     * Get the Adjunct matrix.
-     * Adjunct matrix is a matrix with the i-th row and j-th column removed
-     * 
-     * @param x the row to remove
-     * @param y the column to remove
-     * @return the Adjunct(x,y) matrix
-     */
-    public Matrix getAdjunct(int x,int y){
-        assert this.getColumns()>1 && this.getRows()>1 : String.format("Cannot reduce matrix %s any more",this.getSize());
-        
-        Matrix result = new Matrix(this.getRows()-1,this.getColumns()-1);
-        int o=0;
-        for (int i=0;i<result.getRows();i++){
-            if (o==x)
-                o++;
-            int k=0;
-            for (int j=0;j<result.getColumns();j++){
-                if (k==y)
-                    k++;
-                result.set(i, j, this.get(o,k));
-                k++;
-            }
-            o++;
-        }
-        return result;   
-    }
-    
-    /**
-     * Returns the determinant of the matrix.
-     * 
-     * @return the real valued determinant of the matrix
-     */
-    public double det(){
-        assert this.getColumns()==this.getRows() : String.format("Undefined det for non-square matrix (%s)",this.getSize());
-        
-        double result=0;
-        if (this.getColumns()==1)
-            return this.get(0,0);
-        
-        double sign=1;
-        for (int i=0;i<this.getRows();i++){
-            result+= sign*this.get(i,0)*this.getAdjunct(i,0).det();
-            sign*=-1;
-        }
-        return result;
-    }
-    
-    /**
-     * Create a copy of this matrix.
-     * 
-     * @return a new matrix that is a copy of this one
-     */
-    public Matrix copy(){
-        Matrix result = new Matrix(this.getRows(),this.getColumns());
-        for (int i=0;i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++)
-                result.set(i,j,this.get(i,j));
         return result;
     }
     
@@ -402,12 +209,38 @@ public class Matrix implements java.io.Serializable {
      */
     public Matrix getCovariance(){
         Matrix result;
-        Matrix data = this.copy();
-        Vector neg_average = data.getAverageVector().multiply(-1);
-        data.sum(neg_average);
-        result = data.getTransposed().getMult(data).multiply(1f/getRows());
+        Matrix data;
+        data = this.copy();
+        Vector neg_average = (Vector) data.getAverageVector().multiply(-1.0);
+        data.add(neg_average);
+        result = (Matrix) data.getTransposed()
+            .getProduct(data)
+            .multiply(new Real(getRows()).inv());
         return result;
     }
+    
+    /**
+     * Perform PCA analysis on this dataset
+     * 
+     * @return An array of matrices. 
+     * The first is the transformation matrix (eigenvectors as columns)
+     * the second matrix zero with eigenvalues in the diagonal
+     */
+    public Matrix[] PCA(){
+        // TODO: prime chance to cache 
+        Vector average = this.getAverageVector();
+        if (!average.isZero())
+            Logger.log(Logger.LL_WARNING, "Trying to do PCA to a non-zero-average matrix");
+        Matrix cov = this.getCovariance();
+        ArrayList<Vector> eigenVectors = cov.getEigenVectors();
+        Matrix result = new Matrix(cov.getRows(),cov.getColumns());
+        for (int i=0;i<result.getRows();i++)
+            for (int j=0;j<result.getColumns();j++)
+                result.set(i, j, eigenVectors.get(i).get(j));
+        Vector eigenValues = this.getEigenvalues();
+        return new Matrix[]{result,Matrix.diag(eigenValues)};
+    }
+    
     
     /**
      * Get an x by y matrix with zeros.
@@ -428,7 +261,7 @@ public class Matrix implements java.io.Serializable {
      * @return A one-valued matrix
      */
     public static Matrix ones(int x,int y){
-        return zeros(x,y).add(1);
+        return zeros(x,y).add(Real.unit());
     }
     
     /**
@@ -437,7 +270,7 @@ public class Matrix implements java.io.Serializable {
      * @param vals the values in the diagonal of the matrix
      * @return the diagonal matrix
      */
-    public static Matrix diag(double...vals){
+    public static Matrix diag(Real...vals){
         Matrix result = new Matrix(vals.length,vals.length);
         for (int i=0;i<vals.length;i++)
             result.set(i,i,vals[i]);
@@ -451,7 +284,10 @@ public class Matrix implements java.io.Serializable {
      * @return the diagonal matrix
      */
     public static Matrix diag(Vector vals){
-        return diag(vals.toArray());
+        Matrix result = new Matrix(vals.getLength(),vals.getLength());
+        for (int i=0;i<vals.getLength();i++)
+            result.set(i, i, vals.get(i));
+        return result;
     }
     
     /**
@@ -470,7 +306,7 @@ public class Matrix implements java.io.Serializable {
     }
     
     /**
-     * Get a unity matrix of size x by x
+     * Get a unit matrix of size x by x
      * 
      * @param x the size of the matrix
      * @return The unity x by x matrix
@@ -480,118 +316,21 @@ public class Matrix implements java.io.Serializable {
     }
     
     /**
-     * Perform an elementary row operation on this matrix
-     * 
-     * @param lhs Left-hand-side of the operation. The row that will be changed
-     * @param l_factor the factor by which lhs will be multiplied
-     * @param rhs Right-hand-side of the operation. The row that will be added 
-     * to lhs
-     * @param r_factor the factor by which rhs will be multiplied     * 
-     * @return This matrix
-     */
-    public Matrix _rowOperation(int lhs, double l_factor, int rhs, double r_factor){
-        for (int i=0;i<this.getColumns();i++)
-            this.set(lhs,i,this.get(lhs,i)*l_factor+this.get(rhs,i)*r_factor);
-        if (_mirror!=null)
-            _mirror._rowOperation(lhs, l_factor, rhs, r_factor);
-        return this;
-    }
-    
-    /**
-     * Perform an elementary swap of two rows
-     * 
-     * @param a the first row
-     * @param b the second row
-     * @return This matrix
-     */
-    public Matrix _rowSwap(int a, int b){
-        for (int i=0;i<this.getColumns();i++){
-            double temp=this.get(a,i);
-            this.set(a,i,this.get(b,i));
-            this.set(b,i,temp);
-        }
-        if (_mirror!=null)
-            _mirror._rowSwap(a, b);
-        return this;
-    }
-    
-    /**
-     * Transform this matrix to an upper triangular using elementary row 
-     * operations
-     * 
-     * @return This matrix after the operation
-     */
-    public Matrix _utrig(){
-        for (int row=0; row<this.getRows();row++){
-            int col=0;            
-            while (this.get(row,col)==0){
-                boolean found=false;
-                for (int row2=row+1;row2<this.getRows();row2++){
-                    if (this.get(row2,col)!=0){
-                        this._rowSwap(row, row2);
-                        found=true;
-                        break;
-                    }
-                }
-                if(found)
-                    break;
-                col++;
-                if (col>=this.getColumns())
-                    return this;
-            }
-            this._rowOperation(row, 1f/this.get(row,col), row, 0f);
-            for (int i=row+1;i<this.getRows();i++)
-                this._rowOperation(i, 1f, row, -this.get(i,col));
-        }
-        return this;
-    }
-
-    /**
-     * Transform this matrix to a lower triangular using elementary row 
-     * operations
-     * 
-     * @return This matrix after the operation
-     */
-    public Matrix _ltrig(){
-        for (int row=this.getRows()-1; row>=0;row--){
-            int col=this.getRows()-1;
-            while (this.get(row,col)==0){
-                boolean found=false;
-                for (int row2=row-1;row2>=0;row2--){
-                    if (this.get(row2,col)!=0){
-                        this._rowSwap(row, row2);
-                        found=true;
-                        break;
-                    }
-                }
-                if(found)
-                    break;
-                col--;
-                if (col>=this.getColumns())
-                    return this;
-            }
-            this._rowOperation(row, 1f/this.get(row,col), row, 0f);
-            for (int i=row-1;i>=0;i--)
-                this._rowOperation(i, 1, row, -this.get(i,col));
-        }
-        return this;
-    }
-    
-    /**
      * Return the Inverse Matrix using Gauss-Jordan method
      * Only works for square matrices
      * @return a new Matrix such that A*B=I
      */
     public Matrix getInverse(){
         assert this.getColumns()==this.getRows() : String.format("For now I can not calculate pseudo-inverted matrix",this.getSize());
-        double det = this.det();
-        assert det!=0 : String.format("The matrix is not invertible",this.getSize());
+        Real det = this.det();
+        assert !det.isZero() : String.format("The matrix is not invertible",this.getSize());
         
         Matrix result = Matrix.eye(this.getRows());
-        Matrix temp = this.copy();
-        temp.setMirror(result);
+        Matrix temp = (Matrix) this.copy();
+        
+        temp.setAugmented(result);
             temp._utrig()._ltrig();
-        temp.setMirror(null);
+        temp.setAugmented(null);
         return result;
     }
     
@@ -617,47 +356,243 @@ public class Matrix implements java.io.Serializable {
     }
     
     /**
-     * Save this matrix into the filesystem
+     * Create a copy of this matrix.
      * 
-     * @param filename the filename to which the file will be saved
+     * @return a new matrix that is a copy of this one
      */
-    public void save(String filename){
-        try {
-         FileOutputStream fileOut = new FileOutputStream(filename);
-         ObjectOutputStream out = new ObjectOutputStream(fileOut);
-         out.writeObject(this);
-         out.close();
-         fileOut.close();
-      } catch (IOException i) {
-         i.printStackTrace();
-      }
+    public Matrix copy(){
+        Matrix result = new Matrix (this.getRows(),this.getColumns());
+        for (int i=0;i<result.getRows();i++)
+            for (int j=0;j<result.getColumns();j++)
+                result.set(i,j,this.get(i,j).copy());
+        return result;
+    }
+
+    /**
+     * Get a column of the matrix as a Vector
+     * Creates a new Vector with the values of the specified column of the matrix
+     * 
+     * @param col the index of the desired column
+     * @return the column of the matrix as Vector
+     */    
+    public Vector getColumn(int col){
+        this.assertIndexBound(0, col);
+        Vector result = new Vector(this.getRows());
+        //System.out.println(this.getRows());
+        for(int row=0;row<this.getRows();row++){
+            result.set(row, this.get(row, col).getPrimitive());
+        }
+        return result;
+    }
+    
+    /**
+     * Get a row of the matrix as a Vector
+     * Creates a new Vector with the values of the specified row of the matrix
+     * 
+     * @param row the index of the desired row
+     * @return the row of the matrix as Vector
+     */    
+    public Vector getRow(int row){
+        this.assertIndexBound(row , 0);
+        Vector result = new Vector(this.getColumns());
+        //System.out.println(this.getRows());
+        for(int col=0;col<this.getColumns();col++){
+            result.set(col, this.get(row, col).getPrimitive());
+        }
+        return result;
     }
     
     
     /**
-     * Load a matrix from the filesystem
+     * Calculates the solution of the linear system
+     * Returns a list of Vectors that represent the solutions of the system
      * 
-     * @param filename the filename from which the matrix will be read
+     * @param b the constant terms
+     * @return A list of Vectors. The first represents the constant terms
+     * of the solutions and the rest are the basis Vector of the solution space
      */
-    public static Matrix load(String filename){
-        Matrix result;
-        try {
-         FileInputStream fileIn = new FileInputStream(filename);
-         ObjectInputStream in = new ObjectInputStream(fileIn);
-         result = (Matrix) in.readObject();
-         in.close();
-         fileIn.close();
-         return result;
-      } catch (IOException i) {
-         i.printStackTrace();
-         return null;
-      } catch (ClassNotFoundException c) {
-         System.out.println("Employee class not found");
-         c.printStackTrace();
-         return null;
-      }
+    public ArrayList<Vector> solveLinearSystem(Vector b){
+        this.show("Solving Linear System");
+        ArrayList<Vector> result = new ArrayList<Vector>();
+        result.add(new Vector(this.getRows()));
+        Matrix echelon = this.copy();
+        boolean homogenous = b==null || b.isZero();
+        Vector y;
+        if (b==null)
+            y = new Vector(this.getRows());
+        else
+            y = b.copy();
+        echelon.setAugmented(y);
+            echelon.gaussianElemination();
+        echelon.setAugmented(null);
+        
+        echelon.show("Echelon");
+        for (int col=0;col<echelon.getColumns();col++){
+            boolean isPivot=false;
+            boolean pivotColumn=false;
+            // This could go up to echelon.getRows() but since this is an 
+            // echelon Matrix, the rest of the elements are 0
+            for (int row=0;row<=col;row++){
+                isPivot=echelon.isPivot(row, col);
+                if (isPivot){
+                    pivotColumn=true;
+                    if (y!=null)
+                        result.get(0).set(col, y.get(row).copy());
+                }
+            }
+            if (!pivotColumn){
+                Vector temp = echelon.getColumn(col);
+                temp.set(col, Real.unit());
+                result.add(temp);
+            }
+        }
+        return result;
     }
     
+    public ArrayList<Vector> getEigenVectors(){
+        assertSquare();
+        Vector eigenValues=this.getEigenvalues();
+        ArrayList <Vector> eigenVectors = new ArrayList();
+        for (int i=0;i<eigenValues.getLength();i++){
+            
+            Real eigenValue = eigenValues.get(i);
+            
+            // Figure out the algrbraic multiplicity of this eigenvalue
+            // also get the first occurence of this lambda
+            int algebraicMultiplicity=0;
+            int firstOccurence=-1;
+            for (int j=0;j<eigenValues.getLength();j++){
+                if (eigenValue.equals(eigenValues.get(j))){
+                    algebraicMultiplicity++;
+                    if (firstOccurence==-1)
+                        firstOccurence=j;
+                }
+            }
+            // If this is not the first occurence of the eigenvalue then it has already been accounted for
+            if (firstOccurence!=i)
+                continue;
+            
+            Matrix temp = this.copy();
+            
+            Logger.log("------------------------------------------ Eig: %s (%s)", eigenValue, eigenValue.getPrimitive());
+            // Reduce each diagonal element by the eigenvalue
+            for (int j=0;j<temp.getColumns();j++)
+                temp.get(j, j).add(eigenValue.getNegative());
+            
+            ArrayList<Vector> solutions = temp.solveLinearSystem(null);
+            if (solutions.size()!=2){
+                for (Vector x : solutions)
+                    x.show("Eig: "+eigenValue);
+            }
+            int geometricMultiplicity = solutions.size()-1;
+            //assert solutions.size()>=2 : String.format("something went wrong trying to find the eigenvectors. Solution size:%d", solutions.size());
+            if (geometricMultiplicity != algebraicMultiplicity)
+                Logger.log(Logger.LL_WARNING,"geometricMultiplicity != algebraicMultiplicity (%d / %d)",geometricMultiplicity, algebraicMultiplicity);
+            Logger.log("Eigenvectors for %s",eigenValue);
+            for (Vector sol : solutions)
+                sol.show();
+            for (int j=1;j<solutions.size();j++)
+                eigenVectors.add(solutions.get(j));
+        }
+        return eigenVectors;
+    }
+    
+    /**
+     * Turn this Matrix to reduced-row-echelon form
+     * using Gaussian elemination
+     * 
+     * @return a reference to this matrix
+     */
+    public Matrix gaussianElemination(){
+        // For all the rows in the Matrix
+        Logger.log("Gaussian Elemination of");
+        this.show("System matrix");
+        Logger.indent();
+        for (int row=0; row<this.getRows();row++){
+            int col=0;
+            // Find a row that starts with a non-zero pivot
+            Logger.log("Current iteration row %d:",row);
+            this.getRow(row).show();
+            while (this.get(row,col).isZero()){
+                Logger.log("Is Zero %s (%d %d): %s",this.get(row, col),row,col,this.get(row, col).isZero());
+                boolean found=false;
+                // If this row starts with a non-zero pivot
+                for (int row2=row+1;row2<this.getRows();row2++){
+                    if (!this.get(row2,col).isZero()){
+                        this._rowSwap(row, row2);
+                        found=true;
+                        Logger.log("Found");
+                        break;
+                    }
+                }
+                if(found){
+                    System.out.printf("Found!!");
+                    break;
+                }
+                col++;
+                if (col>=this.getColumns()){
+                    Logger.log("Returning");
+                    return this;
+                }
+                Logger.log("::Is Zero %s (%d %d): %s",this.get(row, col),row,col,this.get(row, col).isZero());
+            }
+            Logger.log(" Pivot is %s\t%e,%s",this.get(row,col).toStringE(),this.get(row,col).copy().getPrimitive(),this.get(row,col).isZero());
+            
+            if (!this.get(row,col).isUnit()){
+                this.getRow(row).show("Normalizing");
+                this._rowOperation(
+                    row, this.get(row,col).copy().inv(), 
+                    0, Real.zero()
+                );
+                this.getRow(row).show("Normalized");
+            }
+            else this.getRow(row).show("No normalization needed");
+            
+            Logger.log("\t Current: --- ");
+            for (int i=0;i<this.getColumns();i++){
+                Logger.log("%s ",this.get(row,i));
+            }
+            Logger.log("");
+            Logger.log("Checking rows above and below Col %d:",col);
+            for (int i=0;i<this.getRows();i++){
+                Logger.log("Row: %d",i);
+                if (i==row){
+                    Logger.log("Skip diagonal Row: %d / %d",i,row);
+                    continue;
+                }
+                if (!this.get(i, col).isZero())
+                    this._rowOperation(
+                        i, Real.unit(), 
+                        row, this.get(i,col).getMultiply(-1.0).div(this.get(row,col))
+                    );
+                else this.getRow(i).show("Skipping row: "+i );
+            }
+            Logger.log("\t/---");
+        }
+        Logger.dedent    ();
+        return this;
+    }
+
+    /**
+     * Returns the characteristic polynomial of this Matrix
+     * 
+     * @return the characteristic polynomial of this Matrix
+     */
+    public Polynomial getCharacteristicPolynomial(){
+        assertSquare();
+        GenericMatrix<Polynomial> lamda = new GenericMatrix<Polynomial>(this.getRows(),this.getColumns());
+        for (int i=0;i<lamda.getRows();i++)
+            for (int j=0;j<lamda.getColumns();j++)
+                if (i==j)
+                    lamda.set(i, j, new Polynomial(this.get(i,j).getPrimitive(),-1.0));
+                else
+                    lamda.set(i, j, new Polynomial(this.get(i,j).getPrimitive(),0.0));
+        return lamda.det();
+    }
+    
+    public Vector getEigenvalues(){
+        return getCharacteristicPolynomial().getRoots();
+    }
     
     /**
      * Temporary: Perform some benchmarkings for the matrix configuration
@@ -675,7 +610,7 @@ public class Matrix implements java.io.Serializable {
             }
 
         System.out.println("GO!");
-        Matrix c = a.getMult(b);
+        Matrix c = (Matrix) a.getProduct(b);
     }
     
     
@@ -686,10 +621,33 @@ public class Matrix implements java.io.Serializable {
      * @param args Commmand line arguments
      */
     public static void main(String[] args){
-        double[][] data = {{4,0,0,0},{0,0,2,0},{0,1,2,0},{1,0,0,1}};
+        //double[][] data = {{0,1,4,1,2},{-1,-2,0,9,-1},{1,2,0,-6,1},{2,5,4,-10,4},{0,0,0,0,0}};
+        //double[][] data = {{3,6,-8},{0,0,6},{0,0,2}};
+        double[][] data = {{1,-3,3},{3,-5,3},{6,-6,4}};
+        //double[][] data = {{2,0,0},{0,3,4},{0,4,9}};
+        //double[][] data = {{0,1},{-2,-3}};
+        
         Matrix x = new Matrix(data);
-        x.show();
-        x.getInverse().show();
+        x.show("Original Matrix");
+        Logger.indent();
+        //x.getInverse().show();
+        x.getCharacteristicPolynomial().show("Char poly");
+        x.getCharacteristicPolynomial().getRoots().show("Eigenvalues");
+        
+        
+        ArrayList<Vector> results = x.getEigenVectors();
+        for (Vector i:results) i.show("EigVec"+results.size());
+        
+        /*
+        Polynomial poly = x.getCharacteristicPolynomial();
+        poly.show();
+        Vector lamda = poly.getRoots();
+        for (int i=0;i<lamda.getLength();i++){
+            System.out.printf("%f - %e\n", lamda.get(i).get(),lamda.get(i).get() - Math.round(lamda.get(i).get()));
+        }
+        */
+        Logger.dedent();
+        x.show("Final Matrix");
         
     }
 }
