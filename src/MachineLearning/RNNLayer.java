@@ -3,6 +3,7 @@ package MachineLearning;
 import Core.NLP;
 import Graphics.Figure;
 import Math.Matrix;
+import Math.Operatables.Real;
 import Math.Vector;
 import java.util.ArrayList;
 import java.util.Random;
@@ -90,10 +91,10 @@ public class RNNLayer extends NeuronLayer{
             else
                 reset();
             //System.out.println(target_vector);
-            Matrix mergedBiasedInput_matrix = addBias(pattern_vectors[k].merge(_memory_vector));
+            Matrix mergedBiasedInput_matrix = appendBias(pattern_vectors[k].merge(_memory_vector));
 
             Matrix temp = getDelta(mergedBiasedInput_matrix, output_vectors[k], error_vector);
-            delta_matrix.add(1,temp,1);
+            delta_matrix.add(temp);
             
             /*
             System.out.printf("k:\t%d\n",k);
@@ -112,7 +113,7 @@ public class RNNLayer extends NeuronLayer{
             for (j=0;j<error_vector.getLength();j++){
                 error_vector.set(j, memoryError_vector.get(j));
             }
-            error_vector.times(1.0/error_vector.norm());
+            error_vector.div(error_vector.getNorm());
             /*
             for (int i=0;i<_memory_vector.getLength();i++){
                 _memory_vector.set(i, memoryError_vector.get(j++));
@@ -140,8 +141,8 @@ public class RNNLayer extends NeuronLayer{
         int len = str.length();
         int steps = 3;
         int batches=1000;
-        double rate = 1;
-        double l = 0.999;
+        Real rate = new Real(1);
+        Real l = new Real(0.999);
         int demo_count=0;
         Vector errors = new Vector(batches);
         
@@ -180,9 +181,12 @@ public class RNNLayer extends NeuronLayer{
             rnn.reset();
             Vector target = getPattern(str.charAt(idx+steps));
             Vector error_vector = rnn.train(inputSequence_list.get(idx), target);
-            errors.set(batch,error_vector.norm());
+            errors.set(batch,error_vector.getNorm());
             
-            rnn.setTrainingRate(rnn.getTrainingRate()*l);
+//             since the rate variable is shared, this should change the
+//             training rate of all the Layer
+            rate.multiply(l);
+//            rnn.setTrainingRate(rnn.getTrainingRate()*l);
         }
         
         
@@ -194,7 +198,7 @@ public class RNNLayer extends NeuronLayer{
                 Vector pattern = getPattern(c);
                 Vector out = rnn.classify(pattern);
                 //int idx = NLP.pick(out.getMultiplied(1.0/out.sum()).toArray());//out.argMax();
-                int idx = NLP.pick(NLP.softmax(out).toArray());
+                int idx = NLP.pick(NLP.softmax(out).getPrimitiveWeights());
                 //int idx = out.argMax();
                 c=dict[idx];
                 word+=c;              

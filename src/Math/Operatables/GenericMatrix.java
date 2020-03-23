@@ -6,6 +6,7 @@
 package Math.Operatables;
 
 import Core.Logger;
+import Math.Matrix;
 import Math.Polynomial;
 import Math.Vector;
 import java.io.FileInputStream;
@@ -23,6 +24,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
     implements java.io.Serializable {
     
     private OperatableAdapter<T> _data[][];
+    private transient GenericMatrix<T> _augmented;
     
     /**
      * Constructor for the GenericMatrix class
@@ -60,7 +62,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
      * @param j column index
      * @return the value of the matrix at row i, column j
      */
-    public final T get(int i, int j){
+    public T get(int i, int j){
         assertIndexBound(i,j);
         return (T) _data[i][j];
     }
@@ -73,7 +75,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
      * @param v the value
      * @return this
      */
-    public final GenericMatrix<T> set(int i, int j, T x){
+    public GenericMatrix<T> set(int i, int j, T x){
         assertIndexBound(i,j);
         _data[i][j]=x;
         return this;
@@ -92,13 +94,50 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         return result;
     }
     
+    /**
+     * Get the augmented matrix.
+     * Highly specialized function, this one returns the matrix which will
+     * undergo the same row operations as this one whenever rowOperation 
+     * is invoked
+     * TODO: See if I can get rid of this shit
+     * 
+     * @returns the augmented matrix
+     */
+    public GenericMatrix<T> getAugmented(){
+        return _augmented;
+    }
+    
+    /**
+     * Sets a matrix to be augmented by this one.
+     * Highly specialized function, this one sets the matrix which will
+     * undergo the same row operations as this one whenever rowOperation
+     * is called
+     * 
+     * @param that the augmented matrix
+     * @return this
+     */
+    public GenericMatrix<T> setAugmented(GenericMatrix<T> that){
+        _augmented = that;
+        return this;
+    }
+    
     public GenericMatrix<T> add(GenericMatrix<T> that){
+        assertSizeAlignment(that);
         for (int i=0;i<this.getRows();i++)
             for (int j=0;j<this.getColumns();j++)
                 this.get(i,j).add(that.get(i, j));
-                //this.set(i,j,this.get(i,j).add(that.get(i, j)));
         return this;
     } 
+    
+    public GenericMatrix<T> diff(GenericMatrix<T> that){
+        assertSizeAlignment(that);
+        for (int i=0;i<this.getRows();i++)
+            for (int j=0;j<this.getColumns();j++)
+                this.get(i,j).add(that.get(i, j).getMultiply(-1));
+        return this;
+    } 
+    
+    
 
     public GenericMatrix<T> multiply(Real that){
         for (int i=0;i<this.getRows();i++)
@@ -110,12 +149,17 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
 
     public GenericMatrix<T> getProduct(GenericMatrix<T> that){
         assert this.getColumns()==that.getRows() : String.format("Incompatible matrices to multiply ( [%d %d] / [%d %d] )",this.getRows(),this.getColumns(),that.getRows(),that.getColumns());
-        GenericMatrix<T> result = new GenericMatrix<T> (this.getRows(),this.getColumns());
+        GenericMatrix<T> result = new GenericMatrix<T> (this.getRows(),that.getColumns());
         for (int i=0;i<result.getRows();i++)
             for (int j=0;j<result.getColumns();j++){
+                // TODO: this is hideous. Have the Operatable interface have a getZero()
                 T sum = (T) this.get(0,0).getMultiply(0.0);
                 for (int k=0;k<this.getColumns();k++)
-                    sum.add(this.get(i,k).getProduct(that.get(k,j)));
+                    sum.add(
+                        this.get(i,k).getProduct(
+                            that.get(k,j)
+                        )
+                    );
                 result.set(i,j,sum);
             }
         return result;
@@ -148,7 +192,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
      * @param that the matrix to be compared to
      */
     public void assertSizeAlignment(GenericMatrix<T> that){
-        assert  this.getSize().equals( that.getSize()) : String.format("Incompatible Matrices %s / %s",this.getSize(),that.getSize());
+        assert  this.getRows()==that.getRows() && this.getColumns() == that.getColumns(): String.format("Incompatible Matrices %s / %s",this.getSize(),that.getSize());
     }
     
 
@@ -210,17 +254,20 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
      * @return This matrix
      */
     public GenericMatrix<T> _rowOperation(int lhs, T l_factor, int rhs, T r_factor){
-        //System.out.printf("\t--- Starting RowOp %d <- %d*%s + %d*%s\n",lhs,lhs,l_factor,rhs,r_factor);
         for (int i=0;i<this.getColumns();i++){
             T res = this.get(lhs,i).getProduct(l_factor)
                 .add( this.get(rhs,i).getProduct(r_factor) );
+            /*
             Logger.log("Doing the operation %s = %s * %s + %s * %s",res,
                 this.get(lhs,i),l_factor,
                 this.get(rhs,i),r_factor
             );
+            */
             this.set(lhs,i, res );
         }
-        //System.out.println("\t--- Done RowOp");
+        if (getAugmented()!=null)
+            getAugmented()._rowOperation(lhs,l_factor,rhs,r_factor);
+        
         return this;
     }
 
@@ -237,6 +284,8 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
             this.set(a,i,this.get(b,i));
             this.set(b,i,temp);
         }
+        if (getAugmented()!=null)
+            getAugmented()._rowSwap(a, b);
         return this;
     }
 
@@ -393,7 +442,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         for (int i=0;i<getRows();i++){
             str="";
             for (int j=0;j<getColumns();j++)
-                str+=String.format("%s ",get(i,j).toString());
+                str+=String.format("%s ",get(i,j)!=null?get(i,j).toString():"Null");
             Logger.log(str);
         }
     }
@@ -500,6 +549,53 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         }
     }
     
+    /** 
+     * Multiply matrices element by element
+     * 
+     * @param that the other matrix
+     * @return 
+     */
+    public GenericMatrix multiplyElements(GenericMatrix<T> that){
+        assertSizeAlignment(that);
+        for (int i=0;i<this.getRows();i++)
+            for (int j=0;j<this.getColumns();j++)
+                this.set(i, j, 
+                    this.get(i,j).getProduct(
+                        that.get(i, j)
+                    )
+                );
+        return this;
+    }
+    
+    /** 
+     * Add matrices element by element
+     * 
+     * @param that the other matrix
+     * @return 
+     */
+    public GenericMatrix addElements(GenericMatrix<T> that){
+        assertSizeAlignment(that);
+        for (int i=0;i<this.getRows();i++)
+            for (int j=0;j<this.getColumns();j++)
+                this.get(i, j).add(
+                    that.get(i, j)
+                );
+        return this;
+    }
+    
+    public GenericMatrix getMergeLR(GenericMatrix<T> that){
+        assert this.getRows()==that.getRows():String.format("Matriced should have "
+                + "the same row count to mergeLR [%s]\t[%s]",this.getSize(),that.getSize());
+        GenericMatrix result = new Matrix(this.getRows(),this.getColumns()+that.getColumns());
+        for (int i=0;i<result.getRows();i++){
+            for (int j=0;j<this.getColumns();j++)
+                result.set(i, j, this.get(i,j));
+            for (int j=0;j<that.getColumns();j++)
+                result.set(i,this.getColumns()+j, that.get(i,j));
+        }
+        return result;
+    }
+            
     // diag
     // is trig,diag whatevs
     

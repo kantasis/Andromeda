@@ -8,8 +8,6 @@ import java.util.Random;
 
 public class Matrix extends GenericMatrix<Real> {
     
-    private transient Matrix _augmented;
-    
     /**
      * Constructor for the Matrix class
      * Create a new Matrix defining the number of rows and columns
@@ -36,42 +34,25 @@ public class Matrix extends GenericMatrix<Real> {
         for(int i=1;i<data.length;i++)
             assert data[i-1].length==data[i].length : String.format("Can't create matrix out of array. Inconsistent dimensions");
         for(int i=0;i<data.length;i++){
-            for(int j=0;j<data.length;j++){
+            for(int j=0;j<data[0].length;j++){
                 this.set(i,j,new Real(data[i][j]));
             }
         }
     }
     
+    /**
+     * Set the value of the specified element. This function takes a double and
+     * sets it as Real
+     * 
+     * @param i the row of the element to set
+     * @param j the column of the element to set
+     * @param v the value of the element to set
+     * @return this
+     */
     public Matrix set(int i, int j, double v){
         return (Matrix) this.set(i, j, new Real(v));
     }
     
-    /**
-     * Get the augmented matrix.
-     * Highly specialized function, this one returns the matrix which will
-     * undergo the same row operations as this one whenever rowOperation 
-     * is invoked
-     * TODO: See if I can get rid of this shit
-     * 
-     * @returns the augmented matrix
-     */
-    public Matrix getAugmented(){
-        return _augmented;
-    }
-    
-    /**
-     * Sets a matrix to be augmented by this one.
-     * Highly specialized function, this one sets the matrix which will
-     * undergo the same row operations as this one whenever rowOperation
-     * is called
-     * 
-     * @param that the augmented matrix
-     * @return this
-     */
-    public Matrix setAugmented(Matrix that){
-        _augmented = that;
-        return this;
-    }
     
     /**
      * Assign to this matrix the weighted sum of this and another matrix
@@ -167,7 +148,23 @@ public class Matrix extends GenericMatrix<Real> {
     public Vector getAverageVector(){
         return (Vector) this.getSumVector().multiply(1.0/this.getRows());
     }
-      
+    
+    public Vector getStdVector(){
+        return this.getSumofSquaresVector().add(
+            (Vector) this
+                .getAverageVector()
+                .power(2)
+                .negateElements()
+        );
+    }
+    
+    public Vector getSumofSquaresVector(){
+        Vector result = new Vector(this.getColumns());
+        for (int i=0;i<result.getLength();i++)
+            result.set(i, this.getColumn(i).getSumofSquares());
+        return result;
+    }
+    
     /**
      * Get the max of each column
      * 
@@ -217,6 +214,28 @@ public class Matrix extends GenericMatrix<Real> {
             .getProduct(data)
             .multiply(new Real(getRows()).inv());
         return result;
+    }
+    
+    /**
+     * Override class for GenericMatrix.getProduct() so it returns a Matrix
+     * @param that the other matrix
+     * @return the result of the matrix multiplication
+     */
+    public Matrix getProduct(Matrix that){
+        GenericMatrix temp = super.getProduct(that);
+        Matrix result = new Matrix(temp.getRows(),temp.getColumns());
+        for (int i=0;i<result.getRows();i++)
+            for (int j=0;j<result.getColumns();j++)
+                result.set(i, j, (Real)temp.get(i, j));
+        return result;
+    }
+    
+    public Matrix getTransposed(){
+        Matrix result = new Matrix(this.getColumns(),this.getRows());
+        for (int i=0;i<result.getRows();i++)
+            for (int j=0;j<result.getColumns();j++)
+                result.set(i, j, this.get(j,i));
+        return result;   
     }
     
     /**
@@ -329,8 +348,9 @@ public class Matrix extends GenericMatrix<Real> {
         Matrix temp = (Matrix) this.copy();
         
         temp.setAugmented(result);
-            temp._utrig()._ltrig();
+            temp.gaussianElimination();
         temp.setAugmented(null);
+        //temp.show("Husk");
         return result;
     }
     
@@ -366,6 +386,20 @@ public class Matrix extends GenericMatrix<Real> {
             for (int j=0;j<result.getColumns();j++)
                 result.set(i,j,this.get(i,j).copy());
         return result;
+    }
+
+    public Matrix invertElements(){
+        for (int i=0;i<getRows();i++)
+            for (int j=0;j<getColumns();j++)
+                this.get(i, j).inv();
+        return this;
+    }
+
+    public Matrix negateElements(){
+        for (int i=0;i<getRows();i++)
+            for (int j=0;j<getColumns();j++)
+                this.get(i, j).negate();
+        return this;
     }
 
     /**
@@ -412,7 +446,6 @@ public class Matrix extends GenericMatrix<Real> {
      * of the solutions and the rest are the basis Vector of the solution space
      */
     public ArrayList<Vector> solveLinearSystem(Vector b){
-        this.show("Solving Linear System");
         ArrayList<Vector> result = new ArrayList<Vector>();
         result.add(new Vector(this.getRows()));
         Matrix echelon = this.copy();
@@ -423,10 +456,9 @@ public class Matrix extends GenericMatrix<Real> {
         else
             y = b.copy();
         echelon.setAugmented(y);
-            echelon.gaussianElemination();
+            echelon.gaussianElimination();
         echelon.setAugmented(null);
         
-        echelon.show("Echelon");
         for (int col=0;col<echelon.getColumns();col++){
             boolean isPivot=false;
             boolean pivotColumn=false;
@@ -442,13 +474,18 @@ public class Matrix extends GenericMatrix<Real> {
             }
             if (!pivotColumn){
                 Vector temp = echelon.getColumn(col);
-                temp.set(col, Real.unit());
+                temp.set(col, Real.unit().getNegative());
                 result.add(temp);
             }
         }
         return result;
     }
     
+    
+    /**
+     * Calculate the eigenvectors of this matrix
+     * @return a list of Vectors that represent the eigenvectors of the matrix
+     */
     public ArrayList<Vector> getEigenVectors(){
         assertSquare();
         Vector eigenValues=this.getEigenvalues();
@@ -474,23 +511,15 @@ public class Matrix extends GenericMatrix<Real> {
             
             Matrix temp = this.copy();
             
-            Logger.log("------------------------------------------ Eig: %s (%s)", eigenValue, eigenValue.getPrimitive());
             // Reduce each diagonal element by the eigenvalue
             for (int j=0;j<temp.getColumns();j++)
                 temp.get(j, j).add(eigenValue.getNegative());
             
             ArrayList<Vector> solutions = temp.solveLinearSystem(null);
-            if (solutions.size()!=2){
-                for (Vector x : solutions)
-                    x.show("Eig: "+eigenValue);
-            }
             int geometricMultiplicity = solutions.size()-1;
             //assert solutions.size()>=2 : String.format("something went wrong trying to find the eigenvectors. Solution size:%d", solutions.size());
             if (geometricMultiplicity != algebraicMultiplicity)
                 Logger.log(Logger.LL_WARNING,"geometricMultiplicity != algebraicMultiplicity (%d / %d)",geometricMultiplicity, algebraicMultiplicity);
-            Logger.log("Eigenvectors for %s",eigenValue);
-            for (Vector sol : solutions)
-                sol.show();
             for (int j=1;j<solutions.size();j++)
                 eigenVectors.add(solutions.get(j));
         }
@@ -499,78 +528,98 @@ public class Matrix extends GenericMatrix<Real> {
     
     /**
      * Turn this Matrix to reduced-row-echelon form
-     * using Gaussian elemination
+     * using Gaussian elimination
      * 
      * @return a reference to this matrix
      */
-    public Matrix gaussianElemination(){
+    public Matrix gaussianElimination(){
         // For all the rows in the Matrix
-        Logger.log("Gaussian Elemination of");
-        this.show("System matrix");
-        Logger.indent();
-        for (int row=0; row<this.getRows();row++){
-            int col=0;
-            // Find a row that starts with a non-zero pivot
-            Logger.log("Current iteration row %d:",row);
-            this.getRow(row).show();
-            while (this.get(row,col).isZero()){
-                Logger.log("Is Zero %s (%d %d): %s",this.get(row, col),row,col,this.get(row, col).isZero());
-                boolean found=false;
-                // If this row starts with a non-zero pivot
-                for (int row2=row+1;row2<this.getRows();row2++){
-                    if (!this.get(row2,col).isZero()){
-                        this._rowSwap(row, row2);
-                        found=true;
-                        Logger.log("Found");
-                        break;
+        for (int core_row=0; core_row<this.getRows();core_row++){
+            int col=core_row;
+            // Find the proper column of the pivot element
+            for (;col<this.getColumns();col++){
+                
+                // in case the element is zero ...
+                if (this.get(core_row, col).isZero()){
+                    // ... find a non-zero in the same column ...
+                    for (int row=col+1; row<this.getRows(); row++){
+                        if (!this.get(row, col).isZero()){
+                            // ... and swap rows
+                            this._rowSwap(core_row, row);
+                            break;
+                        }
                     }
                 }
-                if(found){
-                    System.out.printf("Found!!");
+                
+                // If the non-zero element is found, stop searching
+                if (! this.get(core_row, col).isZero())
+                    break;
+            } 
+            
+            // This will trigger if *all* elements of the row are 0
+            if (col==this.getColumns())
+                continue;
+            
+            // for each row in the matrix ...
+            for (int row=0; row<this.getRows(); row++){
+                
+                // ... except the current one ..
+                if (row==core_row)
+                    continue;
+                
+                // .. and if the element is 0 ...
+                if (this.get(row, col).isZero())
+                    continue;
+                
+                // .. perform a row operation to zero that element
+                this._rowOperation(
+                    row, this.get(core_row,col), 
+                    core_row, this.get(row,col).getNegative()
+                );
+            }
+        }
+        
+        // Now do a second pass of rows ...
+        for (int row=0; row<this.getRows();row++){
+            int col = row;
+            boolean pivot_found=false;
+            
+            // ... find the pivot element ...
+            for (;col<this.getColumns();col++){
+                if (! this.get(row, col).isZero()){
+                    pivot_found=true;
                     break;
                 }
-                col++;
-                if (col>=this.getColumns()){
-                    Logger.log("Returning");
-                    return this;
-                }
-                Logger.log("::Is Zero %s (%d %d): %s",this.get(row, col),row,col,this.get(row, col).isZero());
             }
-            Logger.log(" Pivot is %s\t%e,%s",this.get(row,col).toStringE(),this.get(row,col).copy().getPrimitive(),this.get(row,col).isZero());
             
-            if (!this.get(row,col).isUnit()){
-                this.getRow(row).show("Normalizing");
-                this._rowOperation(
-                    row, this.get(row,col).copy().inv(), 
-                    0, Real.zero()
-                );
-                this.getRow(row).show("Normalized");
-            }
-            else this.getRow(row).show("No normalization needed");
+            // ... if there is no pivor (the row is zero) continue ...
+            if (!pivot_found)
+                continue;
             
-            Logger.log("\t Current: --- ");
-            for (int i=0;i<this.getColumns();i++){
-                Logger.log("%s ",this.get(row,i));
-            }
-            Logger.log("");
-            Logger.log("Checking rows above and below Col %d:",col);
-            for (int i=0;i<this.getRows();i++){
-                Logger.log("Row: %d",i);
-                if (i==row){
-                    Logger.log("Skip diagonal Row: %d / %d",i,row);
-                    continue;
-                }
-                if (!this.get(i, col).isZero())
-                    this._rowOperation(
-                        i, Real.unit(), 
-                        row, this.get(i,col).getMultiply(-1.0).div(this.get(row,col))
-                    );
-                else this.getRow(i).show("Skipping row: "+i );
-            }
-            Logger.log("\t/---");
+            // ... make the element unity
+            this._rowDivide( row, this.get(row,col).copy() );
         }
-        Logger.dedent    ();
+        
         return this;
+    }
+    
+    /**
+     * Divides an entire row by a Real number.
+     * To multiply a row by a Real you can use _rowOperation
+     * This function has been implemented to facilitate the divide() function
+     * of BigDecimal which is more accurate than inverting a Real and 
+     * multiplying
+     * 
+     * Like all rowOperations, this one supports an augmented matrix
+     * 
+     * @param row The row index to be operated
+     * @param divisor the Real which the row will be divided by
+     */
+    public void _rowDivide(int row, Real divisor){
+        for (int col=0; col<this.getColumns();col++)
+            this.get(row, col).div(divisor);
+        if (getAugmented()!=null)
+            ((Matrix) getAugmented())._rowDivide(row, divisor);
     }
 
     /**
@@ -599,7 +648,7 @@ public class Matrix extends GenericMatrix<Real> {
      * 
      * @param sz the size of the matrices involved
      */
-    public static void benchmark(int sz){
+    public static void unittest(int sz){
         Matrix a = new Matrix(sz,sz);
         Matrix b = new Matrix(sz,sz);
         Random rnd = new Random();
@@ -609,10 +658,34 @@ public class Matrix extends GenericMatrix<Real> {
                 b.set(i, j, rnd.nextDouble());
             }
 
-        System.out.println("GO!");
-        Matrix c = (Matrix) a.getProduct(b);
+        GenericMatrix c = a.getProduct(b);
     }
     
+    public Matrix normalizeMinmax(){
+        int N=getRows();
+        int M=getColumns();
+        
+        Matrix min_vector = Matrix.ones(N,1).getProduct(getMinVector().getAsRowMatrix());
+        add(min_vector.negateElements());
+        
+        Matrix max_vector = Matrix.ones(N,1).getProduct(getMaxVector().getAsRowMatrix());
+        multiplyElements(max_vector.invertElements());
+        
+        return this;
+    }
+
+    public Matrix normalizeAvgstd(){
+        int N=getRows();
+        int M=getColumns();
+        
+        Matrix min_vector = Matrix.ones(N,1).getProduct(getAverageVector().getAsRowMatrix());
+        add(min_vector.negateElements());
+        
+        Matrix max_vector = Matrix.ones(N,1).getProduct(getStdVector().getAsRowMatrix());
+        multiplyElements(max_vector.invertElements());
+        
+        return this;
+    }
     
     /**
      * The main executable function.
@@ -623,31 +696,75 @@ public class Matrix extends GenericMatrix<Real> {
     public static void main(String[] args){
         //double[][] data = {{0,1,4,1,2},{-1,-2,0,9,-1},{1,2,0,-6,1},{2,5,4,-10,4},{0,0,0,0,0}};
         //double[][] data = {{3,6,-8},{0,0,6},{0,0,2}};
-        double[][] data = {{1,-3,3},{3,-5,3},{6,-6,4}};
+        //double[][] data = {{1,-3,3},{3,-5,3},{6,-6,4}};
+        double[][] data = {{1,2,0},{0,3,0},{2,-4,2}};   // Wikipedia diagonalization example
         //double[][] data = {{2,0,0},{0,3,4},{0,4,9}};
         //double[][] data = {{0,1},{-2,-3}};
         
         Matrix x = new Matrix(data);
         x.show("Original Matrix");
-        Logger.indent();
         //x.getInverse().show();
-        x.getCharacteristicPolynomial().show("Char poly");
-        x.getCharacteristicPolynomial().getRoots().show("Eigenvalues");
         
+        x.getInverse().show("Inverse Matrix");
+        x.getProduct(x.getInverse()).show("Product Matrix");
+        
+        Logger.log("------------- Test Diagonalization --------------------");
+        Logger.indent();
+        x.getCharacteristicPolynomial().show("Char poly");
+        Vector eigenvalues = x.getCharacteristicPolynomial().getRoots();
+        eigenvalues.show("Eigenvalues");
         
         ArrayList<Vector> results = x.getEigenVectors();
-        for (Vector i:results) i.show("EigVec"+results.size());
+        for (Vector i:results) i.show("EigVec");
         
-        /*
-        Polynomial poly = x.getCharacteristicPolynomial();
-        poly.show();
-        Vector lamda = poly.getRoots();
-        for (int i=0;i<lamda.getLength();i++){
-            System.out.printf("%f - %e\n", lamda.get(i).get(),lamda.get(i).get() - Math.round(lamda.get(i).get()));
-        }
-        */
+        Matrix D = Matrix.diag(eigenvalues);
+        
+        Matrix P = new Matrix(x.getRows(),x.getColumns());
+        for (int i=0;i<P.getRows();i++)
+            for (int j=0;j<P.getColumns();j++)
+                P.set(i, j, results.get(j).get(i));
+
+        
+        D.show("Diagonal");
+        P.show("P");
+        P.getInverse().show("P^");
+        Logger.log("---");
+        
+        P.getProduct(D).getProduct(P.getInverse()).show("PDP'");
+        x.show("A");
+        
+        P.getInverse().getProduct(x).getProduct(P).show("P'AP");
+        D.show("D");
+        
         Logger.dedent();
-        x.show("Final Matrix");
         
+        //unittest(100);
+        Logger.log("------------- Test Inversion & Multiplication --------------------");
+        Logger.indent();
+        
+        Matrix a1 = new Matrix(new double[][] { // Wikipedia diagonalization example
+            {1,2,0},{0,3,0},{2,-4,2}
+        });
+        
+        Matrix p = new Matrix(new double[][]{
+            {-1,     0,      -1  },
+            {-1,     0,      0   },
+            {2,      1,      2   }
+        });
+        Matrix p1 = new Matrix(new double[][]{
+            {0,     -1,      0  },
+            {2,      0,      1  },
+            {-1,     1,      0  }
+        });
+        p.show("P");
+        p.getInverse().show("P`");
+        p1.show("P1");
+        p1.getInverse().show("P1`");
+        
+        p1.getProduct(p).show("P1 * P");
+        p.getInverse().getProduct(p).show("P` * P");
+        
+        //p1.getProduct(a1).getProduct(p).show("Result");
+        Logger.dedent();
     }
 }

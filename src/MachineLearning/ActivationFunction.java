@@ -5,16 +5,20 @@
  */
 package MachineLearning;
 
+import Math.Matrix;
+import Math.Operatables.Real;
 import Math.Vector;
 
 public interface ActivationFunction extends java.io.Serializable{
 
-    public Vector evaluate(Vector x);
-    public Vector derivative(Vector x);
-    public Vector fast_derivative(Vector y);
+    public Matrix evaluate(Matrix x);
+    public Matrix derivative(Matrix x);
+    public Matrix fastDerivative(Matrix x);
     
-    public double evaluate(double x);
-    public double derivative(double x);
-    public double fast_derivative(double y);
+    public Real evaluate(Real x);
+    public Real derivative(Real x);
+    public Real fastDerivative(Real x);
+    
+    public boolean hasFast();
         
 }

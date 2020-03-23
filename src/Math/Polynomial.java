@@ -178,8 +178,6 @@ public class Polynomial extends OperatableAdapter<Polynomial> {
     }
     
     public Real getNeutonRoot(Real r){
-        Logger.log("Getting newton root of: %s",this);
-        Logger.log("Initial estimation: %s",r);
 
         Polynomial derivative = getDerivative();
         Real estimate=r.copy();
@@ -188,9 +186,7 @@ public class Polynomial extends OperatableAdapter<Polynomial> {
         Real f_;
         Random rnd = new Random(); // just in case
         int maxIterations=MAX_NEUTON_ITERATIONS;
-        //System.out.printf("Init: %f\n",r);
         while (!f.isZero()){
-            //Logger.log("%d f:  %s\t%s",MAX_NEUTON_ITERATIONS-maxIterations  ,f,estimate);
             f_ = derivative.evaluate(estimate);
             if (f_.isZero()){
                 Logger.log(Logger.LL_WARNING, "Iteration %d\t Encountered a zero-derivative point at %s -> %s",MAX_NEUTON_ITERATIONS-maxIterations , estimate,f);
@@ -200,19 +196,10 @@ public class Polynomial extends OperatableAdapter<Polynomial> {
             previous=estimate.copy();
             estimate.minus(f.copy().div(f_));   // estimate-=f/f_
             if (maxIterations--<=0){
-                System.out.printf("I give up!\n");
-                //System.out.printf("Error: %e\n",estimate-previous);
-                System.out.printf("Value: %e\n",f);
-                System.out.printf("Deriv: %e\n",f_);
-                System.out.printf("Estim: %f\n",estimate);
                 return null;
             }
             f = evaluate(estimate);
         }
-        Logger.indent();
-            Logger.log("Found root at %s, Iteration %d",estimate,MAX_NEUTON_ITERATIONS-maxIterations);
-            Logger.log("f:  %s",f);
-        Logger.dedent();
         return estimate;
     }
     
@@ -226,7 +213,6 @@ public class Polynomial extends OperatableAdapter<Polynomial> {
             Real root;
             if (subnomial.getOrder()<=2){
                 //System.out.println("Going for the quadratic solution of");
-                subnomial.show("Subnomial");
                 Vector roots = subnomial.getQuadraticRoots();
                 for(int duo=0;duo<roots.getLength();duo++){
                     root=roots.get(duo);
@@ -255,7 +241,7 @@ public class Polynomial extends OperatableAdapter<Polynomial> {
     
     public Vector getQuadraticRoots(){
         int order_cache = getOrder();
-        Logger.log("Getting quadratic roots: %d",order_cache);
+        //Logger.log("Getting quadratic roots: %d",order_cache);
         assert order_cache>=1 : String.format("Can't find roots of 0 order polynomials");
         assert order_cache<=2 : String.format("This method can only find roots of first and second order");
         Real c=factor(0);
@@ -271,13 +257,6 @@ public class Polynomial extends OperatableAdapter<Polynomial> {
         }
         Real result1 = b.copy().negate().add(delta.getSqrt()).div(a.getMultiply(2));
         Real result2 = b.copy().negate().diff(delta.getSqrt()).div(a.getMultiply(2));
-        this.show();
-        a.show("a");
-        b.show("b");
-        c.show("c");
-        delta.getSqrt().show("d");
-        result1.show();
-        result2.show();
         return new Vector( result1, result2 );
     }
     

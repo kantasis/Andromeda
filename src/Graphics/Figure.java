@@ -56,10 +56,10 @@ public class Figure extends JFrame{
             Graphics2D g2 = (Graphics2D) g;
             //     g.setColor(color);
 
-            double xmin=xData.min();
-            double ymin=yData.min();
-            double xmax=xData.max();
-            double ymax=yData.max();
+            double xmin=xData.min().getPrimitive();
+            double ymin=yData.min().getPrimitive();
+            double xmax=xData.max().getPrimitive();
+            double ymax=yData.max().getPrimitive();
             
             double xrange=xmax-xmin;
             double yrange=ymax-ymin;
@@ -69,10 +69,10 @@ public class Figure extends JFrame{
             
             int x1=0,y1=0;
             for(int i = 0; i < xData.getLength() - 1; i++) {
-                int x0 = (int) ((xData.get(i) - xmin) / xrange * width);
-                 x1 = (int) ((xData.get(i+1) - xmin) / xrange * width);
-                int y0 = height - (int) ((yData.get(i) - ymin) / yrange * height);
-                 y1 = height- (int) ((yData.get(i+1) - ymin) / yrange * height);
+                int x0 = (int) ((xData.get(i).getPrimitive() - xmin) / xrange * width);
+                 x1 = (int) ((xData.get(i+1).getPrimitive() - xmin) / xrange * width);
+                int y0 = height - (int) ((yData.get(i).getPrimitive() - ymin) / yrange * height);
+                 y1 = height- (int) ((yData.get(i+1).getPrimitive() - ymin) / yrange * height);
                 g2.drawLine(x0, y0, x1, y1);
                 if (i == 0)
                   g2.drawString(("" + x0 + ", " + y0), x0 - 20, y0 + 10);
@@ -93,8 +93,8 @@ public class Figure extends JFrame{
         Vector x = new Vector(N);
         for(int i=0;i<N;i++){
             t.set(i,i*dt);
-            double expo=Math.exp(-t.get(i)/(AT/5));
-            double sine=Math.sin(t.get(i)*2*Math.PI*f)/2;
+            double expo=Math.exp(-t.get(i).getPrimitive()/(AT/5));
+            double sine=Math.sin(t.get(i).getPrimitive()*2*Math.PI*f)/2;
             x.set(i,expo*sine);
         }
         

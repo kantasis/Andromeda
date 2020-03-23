@@ -8,6 +8,7 @@ package Core;
 import Graphics.Figure;
 import MachineLearning.NeuronLayer;
 import MachineLearning.RNNLayer;
+import Math.Operatables.Real;
 import Math.Vector;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -69,9 +70,9 @@ public class NLP {
         
         while (true){
             output_vector = neurons.classify(pattern_vector.merge(prevPattern_vector));
-            Vector probs = output_vector.multiply(1.0/output_vector.sum());
+            Vector probs = (Vector) output_vector.div(output_vector.sum());
             
-            int idx = pick(probs.toArray());
+            int idx = pick(probs.getPrimitiveWeights());
             char c = featmachine.index2char(idx); 
             result += c;
             
@@ -127,9 +128,9 @@ public class NLP {
     public static Vector softmax(Vector x){
         Vector temp = x.copy();
         for (int i=0;i<temp.getLength();i++){
-            temp.set(i, Math.exp(x.get(i)));
+            temp.set(i, Math.exp(x.get(i).getPrimitive()));
         }
-        temp.times(1.0/temp.sum());
+        temp.div(temp.sum());
         return temp;
     }
     
@@ -144,7 +145,7 @@ public class NLP {
         Vector[] pattern_list;
         Vector target_pattern;
         Random rnd = new Random();
-        ArrayList<Double> errors = new ArrayList();
+        ArrayList<Real> errors = new ArrayList();
         Vector error=null;
         
         
@@ -161,7 +162,7 @@ public class NLP {
                 pattern_list = feature_extractor.str2patterns(subword);
                 target_pattern = feature_extractor.data2pattern(target);
                 error = rnn.train(pattern_list, target_pattern);
-                errors.add(error.norm());
+                errors.add(error.getNorm());
             }
             
             //System.out.println(error.norm());
@@ -182,11 +183,11 @@ public class NLP {
             while (true){
                 Vector pattern = feature_extractor.data2pattern(c);
                 Vector out = rnn.classify(pattern);
-                out.power(4).times(1.0/out.sum());
+                out.power(4).div(out.sum());
                 //out.show();
                 //out=softmax(out);
                 
-                int idx = NLP.pick(out.toArray());
+                int idx = NLP.pick(out.getPrimitiveWeights());
                 //int idx = out.argMax();
                 
                 c=CharFeatureExtractor.index2char(idx);

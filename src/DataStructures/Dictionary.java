@@ -5,6 +5,7 @@
  */
 package DataStructures;
 
+import Core.Logger;
 import java.util.ArrayList;
 
 /**
@@ -23,27 +24,22 @@ public class Dictionary <K extends Comparable <K> ,V> {
     
     public void set(K key, V value){
         // TODO: This is a second implementation of binary search, use only one
-        
-        //System.out.printf("Setting %s   %s\n",key,value);
         KVPair<K,V> nuevo = new KVPair(key,value);
-        
+
         int index=-1;
         int start = 0;
         int end = this.getLength()-1;
         
         if (this.getLength()==0){
             _data.add(nuevo);
-            //System.out.printf("The dictionary was empty, easy peasy\n");
             return;
         }
         
         int temp = key.compareTo(this.getPair(start).getKey());
         if (temp<0){
             _data.add(0,nuevo);
-            //System.out.printf("Adding the value to the start of the list %s\n",_data.get(start).getKey());
             return;
         }else if (temp==0){
-            //System.out.printf("New value == head, so....\n");
             _data.get(start).setValue(value);
             return;
         }
@@ -51,30 +47,25 @@ public class Dictionary <K extends Comparable <K> ,V> {
         temp = key.compareTo(this.getPair(end).getKey());
         if (temp>0){
             _data.add(nuevo);
-            //System.out.printf("Adding the value to the end of the list\n");
             return;
         }else if (temp==0){
             _data.get(end).setValue(value);
-            //System.out.printf("New value == tail, so....\n");
             return;
         }
 
         while (start<=end){
             index=(start+end) / 2;
             temp = key.compareTo(this.getPair(index).getKey());
-            //System.out.printf("Comparing %s - %s: %d\n",key, this.getPair(index).getKey(),temp);
             if (temp>0){
                 start=index+1;
             }else if (temp<0){
                 end=index-1;
             }else{
                 _data.get(index).setValue(value);
-                //System.out.printf("Bumped into a bro, replacing %s\n",_data.get(index).getKey());
                 return;
             }
         }
         _data.add(end,nuevo);
-        //System.out.printf("This is where I fit in...\n");
     }
     
     public V get(K key){
@@ -191,14 +182,11 @@ public class Dictionary <K extends Comparable <K> ,V> {
     
     public void show(){
         for (KVPair pair : _data){
-            System.out.println(pair.toString());
+            Logger.log(pair.toString());
         }
     }
     
     public static void main(String[] args){
-        int i=0;
-        System.out.printf("%s\t%s\t%s\n",i<0,i==0,i>0);
-        i=-0;
-        System.out.printf("%s\t%s\t%s\n",i<0,i==0,i>0);
+
     }
 }

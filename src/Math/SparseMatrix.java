@@ -5,6 +5,8 @@
  */
 package Math;
 
+import Core.Logger;
+import Math.Operatables.Real;
 import java.util.ArrayList;
 
 /**
@@ -12,15 +14,16 @@ import java.util.ArrayList;
  * @author GeorgeKantasis
  */
 public class SparseMatrix extends Matrix {
+//    TODO: Figure out if this should extend a matrix or a generic matrix
     
-    private DataStructures.Dictionary<Key,Double> _data;
-    private double _defaultValue;
-    private int _rows,_columns;
+    private DataStructures.Dictionary<Key,Real> _data;
+    private Real _defaultValue;
+    private final int _rows,_columns;
     
     public SparseMatrix(int rows, int columns){
         super(0,0);
         _data = new DataStructures.Dictionary();
-        _defaultValue=0;
+        _defaultValue=Real.zero();
         _rows=rows;
         _columns=columns;
     }
@@ -33,27 +36,29 @@ public class SparseMatrix extends Matrix {
         return _rows;
     }
     
-    public double getDefaultValue(){
+    public Real getDefaultValue(){
         return _defaultValue;
     }
     
-    public void setDefaultValue(double x){
+    public SparseMatrix setDefaultValue(Real x){
         _defaultValue=x;
+        return this;
     }
     
-    public double get(int i,int j){
+    public Real get(int i,int j){
         int idx = _data.indexOf(new Key(i,j));
         if (idx==-1)
             return getDefaultValue();
         return _data.getPair(idx).getValue();
     }
     
-    public Matrix set(int i,int j, double value){
+    public SparseMatrix set(int i,int j, Real value){
+        Key key = new Key(i,j);
         if (value==getDefaultValue()){
-            int idx = _data.indexOf(new Key(i,j));
+            int idx = _data.indexOf(key);
             _data.removeIdx(idx);
         }else{
-            _data.set(new Key(i,j), value);
+            _data.set(key, value);
         }
         return this;
     }
@@ -77,57 +82,50 @@ public class SparseMatrix extends Matrix {
     }
     
     public ArrayList <Key> getKeysUnion(SparseMatrix that){
-        // TODO: Utilize the 4 cases
-        ArrayList<Key> theseKeys = this.getKeys();
-        ArrayList<Key> thoseKeys = that.getKeys();
-        for (Key thatKey : thoseKeys){
+        ArrayList<Key> result = this.getKeys();
+        for (Key thatKey :  that.getKeys()){
             int idx = this._data.indexOf(thatKey);
             if (idx==-1){
-                theseKeys.add(thatKey);
+                result.add(thatKey);
             }
         }
-        return theseKeys;
+        return result;
     }
     
-    public SparseMatrix add(double value){
-        ArrayList<Key> keys = this._data.getKeys();
-        for (Key key : keys){
+    public SparseMatrix add(Real value){
+        for (Key key : getKeys()){
             int i = key.getI();
             int j = key.getJ();
-            this.set(i, j, this.get(i, j)+value);
+            this.get(i, j).add(value);
         }
-        setDefaultValue( getDefaultValue()+value);
-        
+        _defaultValue.add(value);
         return this;
     }
 
-    public SparseMatrix _times(double value){
-        ArrayList<Key> keys = this._data.getKeys();
-        for (Key key : keys){
+    public SparseMatrix multiply(Real value){
+        for (Key key : getKeys()){
             int i = key.getI();
             int j = key.getJ();
-            this.set(i, j, this.get(i, j)*value);
+            this.get(i, j).multiply(value);
         }
-        setDefaultValue( getDefaultValue()*value);
-        
+        _defaultValue.multiply(value);
         return this;
     }
     
-    public SparseMatrix _add(double this_v, SparseMatrix that, double that_v){
-        // TODO: assertSizeAlignment(that);
+    public SparseMatrix weightedSum(Real this_v, SparseMatrix that, Real that_v){
+        assertSizeAlignment(that);
         
         ArrayList<Key> keys = this.getKeysUnion(that);
         
         for (Key key : keys){
             int i = key.getI();
             int j = key.getJ();
-            this.set(i, j, this.get(i, j)*this_v+that.get(i, j)*that_v);
+            this.get(i, j).multiply(this_v).add(that.get(i, j).getMultiply(that_v));
         }
-        
-        setDefaultValue( this.getDefaultValue()*this_v + that.getDefaultValue()*that_v);
+        this.getDefaultValue().multiply(this_v).add(that.getDefaultValue().getMultiply(that_v));
         return this;
     }
-    
+/*    
     public SparseVector getRow(int row){
         // Complexity Notation:
         // X: The entire search space
@@ -151,7 +149,9 @@ public class SparseMatrix extends Matrix {
         }
         return result;
     }
-    
+*/
+
+/*    
     public SparseVector getColumn(int col){        
         // TODO: This can be optimized with binarysearch
         // binary search [logN] for col, fall into the middle of records with row
@@ -165,6 +165,16 @@ public class SparseMatrix extends Matrix {
                 result.set(row, this.get(row,col));
             }
         }
+        return result;
+    }
+*/    
+    public Matrix getMatrix(){
+        if(this.getFillPct()>.5)
+            Logger.log(Logger.LL_WARNING,"Warning: Turning a SparseMatrix with fill percentage %5.2f%% into a matrix",this.getFillPct()*100);
+        Matrix result = new Matrix(this.getRows(),this.getColumns());
+        for(int i=0; i<result.getRows();i++)
+            for (int j=0;j<result.getColumns();j++)
+                result.set(i, j, this.get(i, j));
         return result;
     }
 

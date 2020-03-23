@@ -1,20 +1,26 @@
 package MachineLearning;
 
+import Core.Logger;
+import Math.Operatables.Real;
 import Math.Vector;
 import java.util.Random;
 
 public class Neuron extends Classifier{
     private final Vector _weights;
-    private double _bias;
-    private double _a=1;
-    private Double _trainingRate=1d;
+    private Real _bias;
+    private Real _a=new Real(1);
+    private Real _trainingRate=new Real (1);
     private ActivationFunction _activation;
  
-    public final double getWeight(int i){
+    public final Real getWeight(int i){
         return _weights.get(i);
     }
     
     public final void setWeight(int i, double v){
+        _weights.set(i,v);
+    }
+    
+    public final void setWeight(int i, Real v){
         _weights.set(i,v);
     }
     
@@ -26,31 +32,29 @@ public class Neuron extends Classifier{
         return 1;
     }
     
-    public final double getBias(){
+    public final Real bias(){
         return _bias;
     }
     
-    public final void setBias(double v){
+    public final Neuron setBias(Real v){
         _bias=v;
+        return this;
     }
     
-    public void setTrainingRate(double v){
+    public Neuron setTrainingRate(Real v){
         _trainingRate=v;
+        return this;
     }
     
-    public double getTrainingRate(){
-        return _trainingRate;
-    }
-    
-    public Double _getTrainingRate(){
+    public Real trainingRate(){
         return _trainingRate;
     }
     
     public Neuron(int inputCount){
         _weights = new Vector(inputCount);
-        _activation = new ActivationFunctions.Sigmoid(1);
+        _activation = new ActivationFunctions.Sigmoid();
         Random rnd = new Random();
-        setBias(rnd.nextDouble()*2-1.0);
+        setBias(new Real(rnd.nextDouble()*2-1.0));
         for( int i=0;i< getInputCount();i++)
             setWeight(i, rnd.nextDouble()*2-1.0);
     }
@@ -58,39 +62,49 @@ public class Neuron extends Classifier{
     public Vector classify(Vector pattern){
         assert pattern.getLength()==getInputCount(): String.format("Incompatible input size (%d, %d)",pattern.getLength(),getInputCount());
         Vector result = new Vector(1);
-        double temp=getBias();
-        temp+=pattern.dot(_weights);
-        result.set(0,this._activation.evaluate(temp));
+        Real temp=pattern.getDot(_weights).add(bias());
+        result.set(0,_activation.evaluate(temp));
         return result;
     }
     
     public void train(Vector pattern, Vector target){
         assert target.getLength()!=1 : "Target vector must have only one element";
-        
-        _train(pattern,target.get(0));
+        train(pattern,target.get(0));
     }
     
-    public double _train(Vector pattern, double target){
+    public NeuronTrainingResults train(Vector pattern, Real target){
         assert pattern.getLength()==getInputCount(): String.format("Incompatible input size (%d, %d)",pattern.getLength(),getInputCount());
+        Real error = classify(pattern).get(0).diff(target).negate();
+        Real weightedSum = pattern.getDot(_weights).add(bias());
         
-        double error = target - classify(pattern).get(0);
-        double morsel = getBias() + pattern.dot(_weights);
-        morsel=error*_activation.derivative(morsel);
-        setBias(getBias()+morsel*_trainingRate);
-        Vector delta=pattern.multiply(morsel);
-        _weights.add(1, delta, _trainingRate);
-        return delta.norm();
+        weightedSum=_activation.derivative(weightedSum).multiply(error);
+        bias().add(weightedSum.getMultiply(trainingRate()));
+        Vector delta=(Vector) pattern.getMultiply(weightedSum);
+        _weights.add(delta.getMultiply(trainingRate()));
+        
+        NeuronTrainingResults results = new NeuronTrainingResults();
+        results.delta=delta;
+        results.error=error;
+        
+        return results;
     }
     
     public void show(){
-        System.out.printf("Neuron: %.2f / ", getBias());
+        Logger.log("Neuron: %s / ", bias());
+        String str ="";
         for (int i=0;i<getInputCount();i++){
-            System.out.printf("%.2f, ",getWeight(i));
+            str+=String.format("%s, ",getWeight(i));
         }
-        System.out.println();
+        Logger.log(str);
     }
     
-    public static void main(String[] args){
+    public class NeuronTrainingResults{
+        public NeuronTrainingResults(){}
+        public Vector delta;
+        public Real error;
+    }
+
+    public static void unittest(int max){
         Neuron neu = new Neuron(2);
         Vector[] inputs = {
             new Vector(0,0),
@@ -104,18 +118,31 @@ public class Neuron extends Classifier{
             new Vector(0d),
             new Vector(1d)
         };
-        double d=10;
+        
+        Real error = Real.unit();
+        Real errorSoS = Real.zero();
         int count=0;
-        while (d/count>1e-3 || count<10){
+        
+        // Keep only the main exit condition here
+        while (error.compareTo(new Real(1e-3))<0 ){
             int idx=count%inputs.length;
-            double delta = neu._train(inputs[idx],outputs[idx].get(0));
-            d+=delta;
-            count++;
-            System.out.printf("%f\t%f\n",d,d/count);
+            NeuronTrainingResults grades = neu.train(inputs[idx],outputs[idx].get(0));
+            error = grades.error.abs();
+            errorSoS.add(error);
+
+            // Put the contingency exit condition here
+            if (count++>max)
+                break;
         }
-        System.out.printf("%d\t%.5f\n",count,d);
+        Logger.log("%15s\t%s",count,errorSoS.div(new Real(max)));
         for(int i=0;i<inputs.length;i++)
-            System.out.printf("In: %.1f, %.1f\ttgt: %.1f\tout: %.1f\n",inputs[i].get(0),inputs[i].get(1),outputs[i].get(0),neu.classify(inputs[i]).get(0));
+            Logger.log("In: %s, %s\ttgt: %s\tout: %s",inputs[i].get(0),inputs[i].get(1),outputs[i].get(0),neu.classify(inputs[i]).get(0));
     }
     
+    public static void main(String[] args){
+        for (int i=1;i<1e8;i*=10)
+            unittest(i);
+    }
+
+        
 }

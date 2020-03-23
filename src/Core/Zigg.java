@@ -98,8 +98,8 @@ public class Zigg implements Renderable{
         desicion = brain.classify(pattern);
         brain.train(pattern, desicion);
         
-        double acceleration = desicion.get(0)*2-1;
-        double delta_theta = desicion.get(1)-desicion.get(2);
+        double acceleration = desicion.get(0).getPrimitive()*2-1;
+        double delta_theta = desicion.get(1).getPrimitive()-desicion.get(2).getPrimitive();
         
         accelerate(acceleration/100);
         steer(delta_theta);
@@ -120,12 +120,12 @@ public class Zigg implements Renderable{
         Vector target = new Vector(desicion.getLength());
         if (praise())
             for (int i=0;i<desicion.getLength();i++){
-                double tgt = desicion.get(i);
+                double tgt = desicion.get(i).getPrimitive();
                 target.set(i, 1 - Math.round(tgt));
             }
         else
             for (int i=0;i<desicion.getLength();i++){
-                double tgt = desicion.get(i);
+                double tgt = desicion.get(i).getPrimitive();
                 target.set(i, Math.round(tgt));
             }
                 
@@ -175,12 +175,12 @@ public class Zigg implements Renderable{
         Vector target = new Vector(desicion.getLength());
         if (!zagg.praise())
             for (int i=0;i<desicion.getLength();i++){
-                double tgt = desicion.get(i);
+                double tgt = desicion.get(i).getPrimitive();
                 target.set(i, 1 - Math.round(tgt));
             }
         else
             for (int i=0;i<desicion.getLength();i++){
-                double tgt = desicion.get(i);
+                double tgt = desicion.get(i).getPrimitive();
                 target.set(i, Math.round(tgt));
             }
         
@@ -189,12 +189,12 @@ public class Zigg implements Renderable{
         target = new Vector(desicion.getLength());
         if (zagg.praise())
             for (int i=0;i<desicion.getLength();i++){
-                double tgt = desicion.get(i);
+                double tgt = desicion.get(i).getPrimitive();
                 target.set(i, 1 - Math.round(tgt));
             }
         else
             for (int i=0;i<desicion.getLength();i++){
-                double tgt = desicion.get(i);
+                double tgt = desicion.get(i).getPrimitive();
                 target.set(i, Math.round(tgt));
             }
         

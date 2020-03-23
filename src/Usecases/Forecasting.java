@@ -83,6 +83,6 @@ public class Forecasting {
             System.out.print(neural.get(i).getPrimitive()*normalizer+"\n");
         }
         
-        System.out.println("MSE:\t"+naive_err.norm());
+        System.out.println("MSE:\t"+naive_err.getNorm());
     }
 }

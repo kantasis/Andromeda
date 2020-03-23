@@ -16,11 +16,14 @@ import java.math.RoundingMode;
  */
 public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     
+    public static final int MAX_NEWTON_ITERATIONS=300;
+    public static final int PRECISSION=4;
+    
     private BigDecimal _data;
     private MathContext _mc;
-    public static final MathContext DEFAULT_MATHCONTEXT = new MathContext(6,RoundingMode.HALF_EVEN);
+    public static final MathContext DEFAULT_MATHCONTEXT = new MathContext(PRECISSION,RoundingMode.HALF_EVEN);
 
-    public static final int MAX_NEWTON_ITERATIONS=300;
+    
     
     public Real(BigDecimal x){
         // you can share the same object because it is immutable and 
@@ -82,8 +85,7 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     }
     
     public Real multiply(Real that){
-        return this.set(this._get().multiply(that._get(),getMathContext())
-        );
+        return this.set( this._get().multiply(that._get(), getMathContext()));
     }
     
     public Real multiply(double that){
@@ -120,7 +122,7 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     
     public String toString(){
         //return String.format("[%5.2f]",this.getPrimitive());
-        int x = getMathContext().getPrecision()+3;
+        int x = getMathContext().getPrecision()+4;
         if (isZero())
             return String.format("[%"+x+"s]",0);
         else 
@@ -175,7 +177,7 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     }
     
     public Real sqr(){
-        return this.power(2);
+        return this.multiply(this);
     }
     
     public Real div(Real that){
@@ -198,6 +200,11 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     
     public Real sqrt(){
         assert this.getPrimitive()>=0 : String.format("Tried to find the square root of a negative real");
+        
+        // These two are identity cases
+        if (isZero() || isUnit())
+            return this;
+        
         Real guess = Real.unit();
         // (guess^2-this)/(2*guess)
         Real residual;
@@ -226,8 +233,13 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
         return set(BigDecimal.ONE.divide(_get(),getMathContext()));
     }
     
+    public Real getInv(){
+        return this.copy().inv();
+    }
+    
     public Real negate(){
-        return this.multiply(-1);
+        set(_get().negate());
+        return this;
     }
 
     public Real getNegative(){
@@ -283,19 +295,12 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     
     public static void main(String[] args){
         
-        /*
-        BigDecimal x = new BigDecimal("1");
-        BigDecimal y = new BigDecimal("3");
+        Real x = new Real(3);
         
-        MathContext mc = new MathContext(16,RoundingMode.HALF_EVEN);
-        MathContext mc2 = new MathContext(3,RoundingMode.HALF_EVEN);
         
-        Logger.log("%s",x);
-        y=x.divide(new BigDecimal("3.0"),mc);
-        y=y.round(mc2);
-        Logger.log("%s",y);
-        */
-        
-        unittest();
+        x.show();
+        x.multiply(5.0).negate();
+        x.show();
+        //unittest();
     }
 }

@@ -5,8 +5,10 @@
  */
 package MachineLearning;
 
+import Core.Logger;
 import Math.Vector;
 import Math.Matrix;
+import Math.Operatables.Real;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -21,127 +23,119 @@ import java.util.ArrayList;
  */
 public class NeuronLayer implements java.io.Serializable{
     
-    private Matrix _weights;
-    private double _trainingRate=1;
+    private Matrix _weights_matrix;
+    private Vector _bias_vector;
     private ActivationFunction _activationFunction;
     
     public NeuronLayer(int inputs,int outputs){
-        _activationFunction = new ActivationFunctions.Sigmoid(1);
-        _weights = new Matrix(inputs+1,outputs);
         
+        _activationFunction = new ActivationFunctions.Sigmoid();
+        _weights_matrix = new Matrix(inputs,outputs);
+        _bias_vector = new Vector(outputs);
+                
         Random rnd = new Random();
-        for( int j=0; j < _weights.getColumns(); j++){
-            Vector temp = new Vector(_weights.getRows());
-            for( int i=0; i < _weights.getRows(); i++)
-                temp.set(i,rnd.nextDouble());
-            temp.add(-temp.average());
-            temp.times(temp.norm());
-            for( int i=0; i < _weights.getRows(); i++)
-                _weights.set(i, j, temp.get(i));            
+        
+        for( int j=0; j < outputs; j++){
+            for( int i=0; i < inputs; i++){
+                _weights_matrix.set(i, j, rnd.nextDouble());
+                //_weights_matrix.set(i, j, 0);
+            }            
         }
-            
-                
-            
-                
-        //System.out.println(_weights.getSize());
+        for( int i=0; i < outputs; i++)
+            _bias_vector.set(i, rnd.nextDouble());
+            //_bias_vector.set(i, 0);
     }
         
     public int getOutputCount(){
-        return _weights.getColumns();
+       return _weights_matrix.getColumns();
+    }
+    
+    public void _set(Matrix x, Vector y){
+        _weights_matrix=x;
+        _bias_vector=y;
     }
     
     public int getInputCount(){
-        return _weights.getRows()-1;
-    }
-    
-    public double getTrainingRate(){
-        return _trainingRate;
-    }
-    
-    public void setTrainingRate(double v){
-        _trainingRate=v;
-    }
-    
-    public ActivationFunction getActivationFunction(){
-        return _activationFunction;
-    }
-    
-    public void setActivationFunction(ActivationFunction x){
-        _activationFunction=x;
-    }
-    
-    public Matrix addBias(Vector unbiased_vector){
-        // gets a vector and returns it as a row matrix with a '1' appended
-        Matrix biased_matrix = new Matrix(1, unbiased_vector.getLength()+1);
-        for (int i=0; i<unbiased_vector.getLength(); i++)
-            biased_matrix.set(0, i, unbiased_vector.get(i));
-        biased_matrix.set(0, unbiased_vector.getLength(), 1d);
-        return biased_matrix;
-    }
-    
-    public Vector getWeightedSum(Vector input_vector){
-        return getWeightedSum(input_vector.getAsRowMatrix());
-    }
-    
-    public Vector getWeightedSum(Matrix input_matrix){
-        assert input_matrix.getRows()==1: String.format("The input of this function should be a Row-Matrix (%s)",input_matrix.getSize());
-        assert input_matrix.getColumns()==_weights.getRows(): String.format("The input should be %d long (not %d)",_weights.getRows(),input_matrix.getColumns());
-        //System.out.printf("Getting weighted sum of:\n");
-        //input_matrix.show();
-        //_weights.show();
-        return input_matrix.getMult(_weights).getVector();
-    }
-    
-    public Vector classify(Vector unbiasedInput_vector){
-//        assert unbiasedInput_vector.getLength()==getInputCount(): String.format("Incompatible input size (%d, %d)",unbiasedInput_vector.getLength(),getInputCount());
-        Matrix biasedInput_matrix = addBias(unbiasedInput_vector);
-        Vector weightedSum_Vector = getWeightedSum(biasedInput_matrix);
-        return getActivationFunction().evaluate(weightedSum_Vector);
+        return _weights_matrix.getRows();
     }
         
-    public Matrix getDelta(Matrix biasedInput_matrix, Vector output_vector, Vector error_vector){
-        Vector derivative_vector = getActivationFunction().fast_derivative(output_vector);
-        Vector delta_vector = error_vector.copy().multiplyElements(derivative_vector);
-        Matrix delta_matrix = delta_vector.getMult(biasedInput_matrix).getTransposed();
-        return delta_matrix;
-    }
-    
-    public Vector train(Vector pattern, Vector target){
-        /// Returns the error of the previous layer
-        assert pattern.getLength()==_weights.getRows()-1: 
-                String.format("Incompatible input size (%d, %d)",pattern.getLength(),_weights.getRows()-1);
-        assert target.getLength()==getOutputCount(): 
-                String.format("Incompatible target size (%d, %d)",target.getLength(),getOutputCount());
-    
-        Matrix biasedInput_matrix = addBias(pattern);
-        Vector weightedSum_Vector = getWeightedSum(biasedInput_matrix);
-        Vector output_vector = getActivationFunction().evaluate(weightedSum_Vector);
-        Vector error_vector = target.copy().diff(output_vector);
+    public Matrix classify(Matrix input_matrix){
+        assert input_matrix.getColumns()==this.getInputCount(): 
+            String.format("The input should be %d long (not %d)",
+            this.getInputCount(),input_matrix.getColumns()
+        );
         
-        Matrix delta_matrix = getDelta(biasedInput_matrix, output_vector, error_vector);
-        updateWeights(delta_matrix);
-        
-        Vector prev_matrix = backpropagate(error_vector);
-        
-        return prev_matrix;
-    }
-    
-    public void updateWeights(Matrix diff_matrix){
-        _weights.add(1,diff_matrix,getTrainingRate());
-        //_weights.show();
-    }
-    
-    public Vector backpropagate(Matrix error_matrix){
-        // return the error of the previous step
-        Matrix prevError_matrix = _weights.getMult(error_matrix);
-        Vector unbiasedPrevError_vector = new Vector(prevError_matrix.getRows()-1);
-        for (int i=0; i<unbiasedPrevError_vector.getLength();i++)
-            unbiasedPrevError_vector.set(i,prevError_matrix.get(i,0));
-        return unbiasedPrevError_vector;
+        Matrix weightedSum_matrix = getWeightedSum(input_matrix);
+        return _activationFunction.evaluate(weightedSum_matrix);
     }
         
+    public Matrix[] train(Matrix input_matrix, Matrix target_matrix, Real learningRate, boolean doPropagate){
+        assert input_matrix.getColumns()==this.getInputCount(): 
+            String.format("The input should be %d long (not %d)",
+            this.getInputCount(),
+            input_matrix.getColumns()
+        );        
+        
+        assert target_matrix.getColumns()==this.getOutputCount(): 
+            String.format("The target should be %d long (not %d)",
+            this.getOutputCount(),
+            target_matrix.getColumns()
+        );        
+        
+        assert input_matrix.getRows()==target_matrix.getRows(): 
+            String.format("The input and target matrices should have the same "+
+                "row count (%d %d)",                    
+                input_matrix.getRows(),
+                target_matrix.getRows()
+        );
+        
+        Matrix output_matrix = this.classify(input_matrix);
+        Matrix error_matrix = (Matrix) output_matrix.copy().diff(target_matrix);
+                
+        return train(input_matrix, error_matrix, output_matrix, learningRate, doPropagate);
+    }
+    
+     public Matrix getWeightedSum(Matrix input_matrix){
+        assert input_matrix.getColumns()==this.getInputCount(): 
+            String.format("The input should be %d long (not %d)",
+            this.getInputCount(),input_matrix.getColumns()
+        );
+
+        return input_matrix.getProduct(_weights_matrix).add(_bias_vector);
+    }
+    
+    public Matrix[] train(Matrix input_matrix, Matrix error_matrix, Matrix output_matrix, Real learningRate, boolean doPropagate){
+
+        Matrix derivative_matrix;
+        if (this._activationFunction.hasFast())
+            derivative_matrix = _activationFunction.fastDerivative(output_matrix);
+        else
+            derivative_matrix = _activationFunction.derivative(getWeightedSum(input_matrix));
+        Matrix predelta_matrix = (Matrix) error_matrix.copy().multiplyElements(derivative_matrix);
+        Matrix weightsDelta_matrix = input_matrix.getTransposed().getProduct(predelta_matrix);
+        Vector biasDelta_vector = predelta_matrix.getSumVector();
+        
+        Matrix[] result = null;
+        if (doPropagate){
+            result = new Matrix[]{
+                predelta_matrix.getProduct(_weights_matrix.getTransposed()),
+                biasDelta_vector.getProduct(_bias_vector.getAsRowMatrix())
+            };
+        }    
+        
+        _weights_matrix.diff(weightsDelta_matrix.getMultiply(learningRate));
+        _bias_vector.diff(biasDelta_vector.getMultiply(learningRate));
+        
+        return result;
+    }
+
+    public void show(String name){
+        _weights_matrix.show(name+" weights");
+        _bias_vector.show(name+" biases");
+    }
+
     public void show(){
-        _weights.show();
+        this.show("");
     }
     
     public void save(String filename){
@@ -176,40 +170,39 @@ public class NeuronLayer implements java.io.Serializable{
     }
     
     public static void main(String[] args){
-        NeuronLayer neu = new NeuronLayer(2,5);
-        neu.show();
-        neu.setTrainingRate(0.1);
-        neu.setActivationFunction(new ActivationFunctions.Sigmoid(1));
         
-        Vector[] inputs = {
-            new Vector(0d,0d),
-            new Vector(0d,1d),
-            new Vector(1d,0d),
-            new Vector(1d,1d)
-        };
-        Vector[] outputs = {
-            new Vector(1d,0d,0d,0d,0d),
-            new Vector(0d,1d,0d,0d,1d),
-            new Vector(0d,0d,1d,0d,1d),
-            new Vector(0d,0d,0d,1d,0d)
-        };
-        outputs[0]
-            .show();
+        Matrix inputs = new Matrix(new double[][]{
+            {0,0},
+            {0,1},
+            {1,0},
+            {1,1},
+        });
         
-        Random rnd = new Random();
-        for (int i=0; i<1e5;i++){
-            int idx = rnd.nextInt(inputs.length);
-            //System.out.print(idx);
-            neu.train(inputs[idx],outputs[idx]);
-            
-            Vector error = neu.classify(inputs[idx]).diff(outputs[idx]);
-            //System.out.printf("\t%5.2f\n",error.norm());
+        Matrix targets = new Matrix(new double[][]{
+            {1,0,1,1},
+            {0,1,1,0},
+            {0,1,0,0},
+            {0,1,0,1},
+        });
+        
+        Real rate = new Real(10);
+        
+        inputs.show("Inputs");
+        
+        NeuronLayer neu = new NeuronLayer(inputs.getColumns(),targets.getColumns());
+        neu.show("Layer");
+        
+        neu.getWeightedSum(inputs).show("Weigthed sums");
+        neu.classify(inputs).show("Output");
+        
+        Logger.log("---");
+        Logger.setLogLevel(Logger.LL_ERROR);
+        for (int i=0;i<1000;i++){
+            neu.train(inputs, targets, rate,false);
         }
         
-        for (Vector input : inputs){
-            neu.classify(input)._apply((d)->{return Math.round(d);}).show();
-        }
-        neu.show();
-                
+        neu.show("Trained Layer");
+        targets.show("Targets");
+        neu.classify(inputs).show("Output");
     }
 }

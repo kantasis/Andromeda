@@ -152,7 +152,7 @@ public class Vector extends Matrix  {
      * @param that the other vector
      * @return the real value of the dot product
      */    
-    public Real dot(Vector that){
+    public Real getDot(Vector that){
         assertSizeAlignment(that);
         Real result = Real.zero();
         for (int i=0;i<this.getLength();i++)
@@ -221,11 +221,23 @@ public class Vector extends Matrix  {
      * 
      * @return the Eucledian norm of the vector
      */
-    public Real normsquared(){
+    public Real getSumofSquares(){
+        /*
         Real result= Real.zero();
         for (int i=0;i<getLength();i++)
             result.add(get(i).copy().power(2));
         return result;
+        */
+        return this.copy().power(2).sum();
+    }
+    
+    /**
+     * Calculate the norm-2 of the vector
+     * 
+     * @return the Eucledian norm of the vector
+     */
+    public Real getNorm(){
+        return getSumofSquares().sqrt();
     }
     
     /**
@@ -243,7 +255,7 @@ public class Vector extends Matrix  {
      * @return the std-dev of the vector
      */
     public Real std(){
-        Real result = this.normsquared().add(this.average().power(2).multiply(-1.0));
+        Real result = this.getSumofSquares().add(this.average().power(2).multiply(-1.0));
         return result;
     }
     
@@ -257,9 +269,11 @@ public class Vector extends Matrix  {
      * @param that_v RHS factor
      * @return this vector
      */
-    public Vector add(double this_v, Vector that, double that_v){
+    public Vector weightedSum(Real this_v, Vector that, Real that_v){
         assertSizeAlignment(that);
-        return (Vector) this.add(this_v,that,that_v);
+        Vector thus = (Vector) that.getMultiply(that_v);
+        this.multiply(this_v).add(thus);
+        return this;
     }
     
     /** 
@@ -271,7 +285,26 @@ public class Vector extends Matrix  {
     public Vector add(double value){
         return (Vector) add(new Real(value));
     }
-            
+    
+        /**
+     * Add a value to each element.
+     * 
+     * @param value the value to add
+     * @return this
+     */
+    public Vector add(Vector that){
+        for (int i=0;i<getLength();i++)
+            this.get(i).add(that.get(i));
+        return this;
+    }
+    
+    /*
+    public Vector negateElements(){
+        for (int i=0;i<getLength();i++)
+            this.get(i).negate();
+        return this;
+    }
+    */      
     /**
      * Multiply the elements of this matrix by the argument vector
      * 
@@ -286,6 +319,18 @@ public class Vector extends Matrix  {
     }
     
     /**
+     * Divide all elements of this matrix by a Real number
+     * 
+     * @return the average value of the elements in the vector
+     */
+    public Vector div(Real factor){
+        for (int i=0;i<getLength();i++)
+            this.get(i).div(factor);
+        return this;
+    }
+    
+    
+    /**
      * Return a new vector with the product of this and the argument vector
      * 
      * @param that the argument vector with the factors
@@ -297,12 +342,15 @@ public class Vector extends Matrix  {
     }
         
     /**
-     * Return a copy of this matrix
+     * Return a copy of this Vector
      * 
-     * @return a matrix with the same elements as this one
+     * @return a vector with the same elements as this one
      */
     public Vector copy(){
-        return (Vector) super.copy();
+        Vector result = new Vector(this.getRows());
+        for (int i=0;i<result.getRows();i++)
+            result.set(i,this.get(i).copy());
+        return result;
     }
     
     /**
@@ -313,15 +361,29 @@ public class Vector extends Matrix  {
      */
     public Vector diff(Vector that){
         assertSizeAlignment(that);
-        return this.add(1, that, -1);
+        for (int i=0;i<getLength();i++)
+            this.get(i).diff(that.get(i));
+        return this;
+    }
+    
+    /**
+     * Subtract a Real number from all elements
+     * 
+     * @param that the other vector
+     * @return this vector
+     */
+    public Vector diff(Real that){
+        for (int i=0;i<getLength();i++)
+            this.get(i).diff(that);
+        return this;
     }
     
     /**
      * Calculate the difference of this vector with another one and return a new
      * vector with the result
      * 
-     * @param that the other matrix
-     * @return this matrix
+     * @param that the other vector
+     * @return this vector
      */
     public Vector getDiff(Vector that){
         return this.copy().diff(that);
@@ -389,7 +451,7 @@ public class Vector extends Matrix  {
      * Get a new array of doubles with the values of this vector
      * @return an array with the elements of the vector
      */
-    public double[] toArray(){
+    public double[] getPrimitiveWeights(){
         double[] result = new double[this.getLength()];
         for (int i=0;i<result.length;i++)
             result[i]=this.get(i).getPrimitive();
@@ -397,7 +459,6 @@ public class Vector extends Matrix  {
     }
     
     
-    // TODO: Maybe these two functions should go away
     /**
      * Create a new row matrix with the vector values
      * @return a new row matrix with the vector values
@@ -406,6 +467,17 @@ public class Vector extends Matrix  {
         Matrix result = new Matrix(1,this.getLength());
         for (int i=0;i<this.getLength();i++)
             result.set(0, i, this.get(i));
+        return result;
+    }
+
+    /**
+     * Create a new row matrix with the vector values
+     * @return a new row matrix with the vector values
+     */
+    public Matrix getAsColMatrix(){
+        Matrix result = new Matrix(this.getLength(),1);
+        for (int i=0;i<this.getLength();i++)
+            result.set(i, 0, this.get(i));
         return result;
     }
     
@@ -507,7 +579,7 @@ public class Vector extends Matrix  {
      */
     public Polynomial toPolynomial(){
         assert getLength()>1 : String.format("Can't convert vector to polynomial ...");
-        return new Polynomial(this.toArray());
+        return new Polynomial(this.getPrimitiveWeights());
     }
         
     public static void main(String[] args){

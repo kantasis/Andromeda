@@ -4,6 +4,7 @@ package Core;
 import static Core.NLP.*;
 import MachineLearning.NeuronLayer;
 import MachineLearning.RNNLayer;
+import Math.Operatables.Real;
 import Math.Vector;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -31,7 +32,7 @@ public class Main {
             try {
                     String line;
                     NeuronLayer neurons = new NeuronLayer(LETTERS*2,LETTERS);
-                    neurons.setTrainingRate(1);
+                    neurons.setTrainingRate(Real.unit());
                     double accel=1;//0.95;
                     
                     Vector start_pattern = new Vector(LETTERS);
@@ -61,14 +62,14 @@ public class Main {
                             }
                             target = stop_pattern;
                             neurons.train(pattern_vector.merge(prevPattern_vector), target);
-                            neurons.setTrainingRate(neurons.getTrainingRate()*accel);
+                            neurons.setTrainingRate(neurons.trainingRate().getMultiply(accel));
                         }
                         reader.close();
                     }
                     
                     
                     Vector probs = neurons.classify(start_pattern.merge(featuremachine.data2pattern('a')));
-                    probs.times(1.0/probs.sum());
+                    probs.div(probs.sum());
                     Vector temp = new Vector(LETTERS);
                     
                     for (int i=0;i<30;i++)
@@ -77,10 +78,10 @@ public class Main {
                     for (int i=0;i<LETTERS;i++)
                         for (int j=0;j<100000;j++){
                             int idx = pick(probs);
-                            temp.set(idx, temp.get(idx)+1);
+                            temp.set(idx, temp.get(idx).add(1));
                         }
-                    temp.times(100.0/temp.sum()).show();
-                    probs.times(100).show();
+                    temp.multiply(temp.sum().inv().multiply(100)).show();
+                    probs.multiply(100).show();
                     neurons.save("C:\\Users\\kostis\\Downloads\\temp\\neuron.ser");
             } catch (IOException e) {
                     e.printStackTrace();
@@ -96,7 +97,7 @@ public class Main {
             double v = rnd.nextDouble();
             double sum = 0;
             for (int i=0;i<x.getLength();i++){
-                sum+=x.get(i);
+                sum+=x.get(i).getPrimitive();
                 if (v<sum)
                     return i;
             }
