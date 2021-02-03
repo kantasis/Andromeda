@@ -5,11 +5,11 @@
  */
 package Usecases;
 
-import static DataStructures.CSVLoader.readCSV;
 import MachineLearning.MultilayerNetwork;
 import Math.Vector;
 import java.util.ArrayList;
 import java.util.Random;
+import static DataStructures.CSVLoader.readTextFile;
 
 /**
  *
@@ -19,7 +19,7 @@ public class StockPrediction {
     
     public static ArrayList <Double> getData(String filename){
         //System.out.println("Lets read");
-        ArrayList <String[]> rows = readCSV(filename);
+        ArrayList <String[]> rows = readTextFile(filename);
         ArrayList <Double> data = new ArrayList();
         for (String[] row : rows){
             if (row.length<2)

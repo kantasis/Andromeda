@@ -5,10 +5,10 @@
  */
 package Usecases;
 
-import static DataStructures.CSVLoader.readCSV;
 import Math.Vector;
 import MachineLearning.MultilayerNetwork;
 import java.util.ArrayList;
+import static DataStructures.CSVLoader.readTextFile;
 
 
 /**
@@ -18,7 +18,7 @@ import java.util.ArrayList;
 public class Forecasting {
     public static ArrayList <Double> getData(String filename){
         //System.out.println("Lets read");
-        ArrayList <String[]> rows = readCSV(filename);
+        ArrayList <String[]> rows = readTextFile(filename);
         ArrayList <Double> data = new ArrayList();
         for (String[] row : rows){
             if (row.length<2)
