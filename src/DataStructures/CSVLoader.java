@@ -39,7 +39,6 @@ public class CSVLoader {
             
             String line = br.readLine();
             while (line!=null){
-                //String[] row = line.split(",");
                 result.add(line);
                 line = br.readLine();
             }
@@ -86,10 +85,32 @@ public class CSVLoader {
         return result.pickRows(validRows);
     }
     
-    public static void main(String[] args){
+    public static Matrix getIrisDataset(){
         String filename="C:\\Users\\kostis\\Dropbox\\iris_numeric.csv";
+        return readCSV(filename,",",true);
+    }
+    
+    public static Matrix[] splitInputOutput(Matrix dataset, int...outputColumns){
+        boolean[] input_idxLst = new boolean[dataset.getColumnCount()];
+        boolean[] output_idxLst = new boolean[dataset.getColumnCount()];
         
-        Matrix x = readCSV(filename,",",true);
+        for (int outCol_idx=0; outCol_idx<outputColumns.length; outCol_idx++){
+            for (int currCol_idx=0; currCol_idx<dataset.getColumnCount(); currCol_idx++){
+                output_idxLst[currCol_idx] = currCol_idx == outputColumns[outCol_idx];
+                input_idxLst[currCol_idx] = ! output_idxLst[currCol_idx];
+            }
+        }
+        
+        Matrix output_mat = dataset.pickColumns(output_idxLst);
+        Matrix input_mat = dataset.pickColumns(input_idxLst);
+        
+        return new Matrix[]{input_mat, output_mat};
+    }
+    
+    public static void main(String[] args){
+        Matrix x = getIrisDataset();
         x.getSize().show();
+        
+         
     }    
 }

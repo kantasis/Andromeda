@@ -423,7 +423,7 @@ public class Vector extends Matrix  {
      * @return this
      */
     public Vector sqrt(){
-        for (int i=1;i<getLength();i++)
+        for (int i=0;i<getLength();i++)
             this.get(i).sqrt();
         return this;
     }

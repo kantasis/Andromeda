@@ -19,7 +19,7 @@ public class Main {
     
     public static void main(String[] args){
         
-        Core.Tests.pickRowsColumns_test();
+        Core.Tests.linearRegressorTest();
         
         /*
         for (char c='a';c<='z';c++){

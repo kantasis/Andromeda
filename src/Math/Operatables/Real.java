@@ -16,7 +16,7 @@ import java.math.RoundingMode;
  */
 public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     
-    public static final int MAX_NEWTON_ITERATIONS=300;
+    public static final int MAX_NEWTON_ITERATIONS=3000;
     public static final int PRECISSION=6;
     
     private BigDecimal _data;
@@ -220,7 +220,7 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
         
         Real guess = Real.unit();
         // (guess^2-this)/(2*guess)
-        Real residual;
+        Real residual=null;
         int i=0;
         for (;i<MAX_NEWTON_ITERATIONS;i++){
             residual = guess.copy().power(2).minus(this).div(guess.copy().multiply(new Real(2)));
@@ -229,7 +229,7 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
             guess.minus(residual);
         }
         if (i==MAX_NEWTON_ITERATIONS){
-            Logger.log(Logger.LL_ERROR, "Surpassed the max iterations and could not find sqrt %s -> %s", this,guess);
+            Logger.log(Logger.LL_ERROR, "Surpassed the max iterations and could not find sqrt %s -> %s (%s)", this,guess,residual);
         }
         return set(guess.getBigDecimal());
     }

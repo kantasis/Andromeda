@@ -186,12 +186,11 @@ public class Matrix extends GenericMatrix<Real> {
      * @return a row-vector of the STDs
      */
     public Vector getStdVector(){
-        return this.getSumofSquaresVector().add(
-            (Vector) this
-                .getAverageVector()
-                .power(2)
-                .negateElements()
-        );
+        Vector sumOfSquaresAvg_vec = (Vector) this.getSumofSquaresVector().multiply(1.0/this.getRowCount());
+        Vector squaredAvg_vec = this.getAverageVector().power(2);
+        Vector result = (Vector) sumOfSquaresAvg_vec.copy().diff(squaredAvg_vec);
+        
+        return result.sqrt();
     }
    
     /**
@@ -803,8 +802,11 @@ public class Matrix extends GenericMatrix<Real> {
      */    
     public Matrix standarize(){
         int N = this.getRowCount();
-        Matrix max_vector = Matrix.ones(N,1).getProduct(getStdVector().getAsRowMatrix());
-        multiplyElements(max_vector.invertElements());
+        Matrix std_mat = Matrix.ones(N,1).getProduct(getStdVector().getAsRowMatrix());
+        std_mat.show("std_mat");
+        this.show("Before");
+        multiplyElements(std_mat.invertElements());
+        this.show("after");
         return this;
     }
     
@@ -815,8 +817,8 @@ public class Matrix extends GenericMatrix<Real> {
      */
     public Matrix normalize(){
         int N = this.getRowCount();
-        Matrix max_vector = Matrix.ones(N,1).getProduct(this.getNormVector().getAsRowMatrix());
-        multiplyElements(max_vector.invertElements());
+        Matrix norm_vector = Matrix.ones(N,1).getProduct(this.getNormVector().getAsRowMatrix());
+        multiplyElements(norm_vector.invertElements());
         return this;
     }
     
@@ -891,10 +893,8 @@ public class Matrix extends GenericMatrix<Real> {
         Matrix result = new Matrix(this.getRowCount(),true_cnt);
         int result_idx=0;
         for (int i=0;i<this.getColumnCount();i++)
-            if (indices[i]){
-                this.getColumn(i).show("Got column: "+i);
+            if (indices[i])
                 result.setColumn(result_idx++, this.getColumn(i));
-            }
         return result;
     }
     
