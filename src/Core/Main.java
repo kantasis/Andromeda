@@ -18,6 +18,9 @@ public class Main {
     public static final int STOP = CharFeatureExtractor.STOP;
     
     public static void main(String[] args){
+        
+        Core.Tests.pickRowsColumns_test();
+        
         /*
         for (char c='a';c<='z';c++){
             System.out.printf("%c - %d\n",c,(int)c);
@@ -26,6 +29,8 @@ public class Main {
         if (true)
             return;
         */
+        
+        /*
         CharFeatureExtractor featuremachine = new CharFeatureExtractor();
         
         BufferedReader reader;
@@ -86,6 +91,7 @@ public class Main {
             } catch (IOException e) {
                     e.printStackTrace();
             }
+        */
     }
     
     public static int pick(Vector x){

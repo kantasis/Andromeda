@@ -78,9 +78,9 @@ public class Matrix extends GenericMatrix<Real> {
      */
     public Matrix setColumn(int col, Vector x){
         assert this.getRowCount()==x.getLength() : 
-            String.format("The vector should have %d rows, not %d",
+            String.format("The vector should have %d elements, not %d",
             this.getColumnCount(), x.getLength());
-        for(int row=0; row<this.getColumnCount();row++)
+        for(int row=0; row<this.getRowCount();row++)
             this.set(row, col, x.get(row).getPrimitive());
         return this;
     }
@@ -826,7 +826,7 @@ public class Matrix extends GenericMatrix<Real> {
      * @param indices the indices of this matrix to be copied to the output matrix
      * @return the resulting matrix
      */
-    public Matrix pickRows(Integer[] indices){
+    public Matrix pickRows(Integer...indices){
         Matrix result = new Matrix(indices.length,this.getColumnCount());
         for (int i=0;i<result.getRowCount();i++)
             result.setRow(i, this.getRow(indices[i]));
@@ -864,7 +864,7 @@ public class Matrix extends GenericMatrix<Real> {
      * @param indices the indices of this matrix to be copied to the output matrix
      * @return the resulting matrix
      */
-    public Matrix pickColumns(Integer[] indices){
+    public Matrix pickColumns(Integer...indices){
         Matrix result = new Matrix(this.getRowCount(),indices.length);
         for (int i=0;i<result.getColumnCount();i++)
             result.setColumn(i, this.getColumn(indices[i]));
@@ -888,11 +888,13 @@ public class Matrix extends GenericMatrix<Real> {
             if (index)
                 true_cnt++;
         
-        Matrix result = new Matrix(true_cnt,this.getColumnCount());
+        Matrix result = new Matrix(this.getRowCount(),true_cnt);
         int result_idx=0;
         for (int i=0;i<this.getColumnCount();i++)
-            if (indices[i])
+            if (indices[i]){
+                this.getColumn(i).show("Got column: "+i);
                 result.setColumn(result_idx++, this.getColumn(i));
+            }
         return result;
     }
     
