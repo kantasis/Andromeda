@@ -115,7 +115,7 @@ public class Vector extends Matrix  {
      * @return the element count of the vector
      */
     public int getLength(){
-        return this.getRows();
+        return this.getRowCount();
     }
     
     /**
@@ -222,12 +222,6 @@ public class Vector extends Matrix  {
      * @return the Eucledian norm of the vector
      */
     public Real getSumofSquares(){
-        /*
-        Real result= Real.zero();
-        for (int i=0;i<getLength();i++)
-            result.add(get(i).copy().power(2));
-        return result;
-        */
         return this.copy().power(2).sum();
     }
     
@@ -239,6 +233,7 @@ public class Vector extends Matrix  {
     public Real getNorm(){
         return getSumofSquares().sqrt();
     }
+
     
     /**
      * Calculate the average of the elements in the vector
@@ -286,7 +281,7 @@ public class Vector extends Matrix  {
         return (Vector) add(new Real(value));
     }
     
-        /**
+    /**
      * Add a value to each element.
      * 
      * @param value the value to add
@@ -298,13 +293,6 @@ public class Vector extends Matrix  {
         return this;
     }
     
-    /*
-    public Vector negateElements(){
-        for (int i=0;i<getLength();i++)
-            this.get(i).negate();
-        return this;
-    }
-    */      
     /**
      * Multiply the elements of this matrix by the argument vector
      * 
@@ -347,8 +335,8 @@ public class Vector extends Matrix  {
      * @return a vector with the same elements as this one
      */
     public Vector copy(){
-        Vector result = new Vector(this.getRows());
-        for (int i=0;i<result.getRows();i++)
+        Vector result = new Vector(this.getRowCount());
+        for (int i=0;i<result.getRowCount();i++)
             result.set(i,this.get(i).copy());
         return result;
     }
@@ -430,6 +418,17 @@ public class Vector extends Matrix  {
     }
     
     /**
+     * Calculate the square root of each element
+     * 
+     * @return this
+     */
+    public Vector sqrt(){
+        for (int i=1;i<getLength();i++)
+            this.get(i).sqrt();
+        return this;
+    }
+    
+    /**
      * Calculate the absolute value of the vector
      * @return this vector
      */
@@ -480,23 +479,7 @@ public class Vector extends Matrix  {
             result.set(i, 0, this.get(i));
         return result;
     }
-    
-    // TODO: I need to review this and see if 
-    /**
-     * Apply a function to all elements of the vector
-     * @param f the function
-     * @return this vector
-     */
-    public Vector _apply(Function f){
-        for (int i=0;i<this.getLength();i++)
-            this.set(i, f.run(this.get(i).getPrimitive()));
-        return this;
-    }
-    
-    public static interface Function{
-        public double run(double v);
-    }
-    
+   
     /**
      * Concatenate two vectors
      * 
@@ -529,11 +512,15 @@ public class Vector extends Matrix  {
                 sum.add((Real)this.get(j).getMultiply(that.get(i-j)));
                 //sum+=this.get(j)*that.get(i-j);
             result.set(i,sum);
-
         }
         return result;
     }
-    
+
+    /**
+     * Return whether this is a unit matrix
+     * 
+     * @return true if this is a unit matrix, false otherwise
+     */    
     public boolean isUnit(){
         boolean unit_found = false;
         for(int i=0;i<this.getLength();i++){

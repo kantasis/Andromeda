@@ -88,8 +88,6 @@ public class Main {
             }
     }
     
-    
-    
     public static int pick(Vector x){
         if (true){
             Random rnd = new Random();
@@ -105,7 +103,4 @@ public class Main {
         }else
             return x.argMax();
     }
-    
-    
-    
 }

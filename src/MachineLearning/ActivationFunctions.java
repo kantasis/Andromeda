@@ -14,25 +14,25 @@ public abstract class ActivationFunctions implements ActivationFunction{
     private static boolean hasFast=false;
     
     public Matrix evaluate(Matrix x){
-        Matrix result = new Matrix(x.getRows(),x.getColumns());
-        for (int i=0;i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++)
+        Matrix result = new Matrix(x.getRowCount(),x.getColumnCount());
+        for (int i=0;i<result.getRowCount();i++)
+            for (int j=0;j<result.getColumnCount();j++)
                 result.set(i,j, this.evaluate(x.get(i,j)));
         return result;
     }
     
     public Matrix derivative(Matrix x){
-        Matrix result = new Matrix(x.getRows(),x.getColumns());
-        for (int i=0;i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++)
+        Matrix result = new Matrix(x.getRowCount(),x.getColumnCount());
+        for (int i=0;i<result.getRowCount();i++)
+            for (int j=0;j<result.getColumnCount();j++)
                 result.set(i,j, this.derivative(x.get(i,j)));
         return result;    
     }
     
     public Matrix fastDerivative(Matrix x){
-        Matrix result = new Matrix(x.getRows(),x.getColumns());
-        for (int i=0;i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++)
+        Matrix result = new Matrix(x.getRowCount(),x.getColumnCount());
+        for (int i=0;i<result.getRowCount();i++)
+            for (int j=0;j<result.getColumnCount();j++)
             result.set(i,j, this.fastDerivative(x.get(i,j)));
         return result;    
     }

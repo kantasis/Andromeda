@@ -47,7 +47,7 @@ public class NeuronLayer implements java.io.Serializable{
     }
         
     public int getOutputCount(){
-       return _weights_matrix.getColumns();
+       return _weights_matrix.getColumnCount();
     }
     
     public void _set(Matrix x, Vector y){
@@ -56,13 +56,13 @@ public class NeuronLayer implements java.io.Serializable{
     }
     
     public int getInputCount(){
-        return _weights_matrix.getRows();
+        return _weights_matrix.getRowCount();
     }
         
     public Matrix classify(Matrix input_matrix){
-        assert input_matrix.getColumns()==this.getInputCount(): 
+        assert input_matrix.getColumnCount()==this.getInputCount(): 
             String.format("The input should be %d long (not %d)",
-            this.getInputCount(),input_matrix.getColumns()
+            this.getInputCount(),input_matrix.getColumnCount()
         );
         
         Matrix weightedSum_matrix = getWeightedSum(input_matrix);
@@ -70,23 +70,23 @@ public class NeuronLayer implements java.io.Serializable{
     }
         
     public Matrix[] train(Matrix input_matrix, Matrix target_matrix, Real learningRate, boolean doPropagate){
-        assert input_matrix.getColumns()==this.getInputCount(): 
+        assert input_matrix.getColumnCount()==this.getInputCount(): 
             String.format("The input should be %d long (not %d)",
             this.getInputCount(),
-            input_matrix.getColumns()
+            input_matrix.getColumnCount()
         );        
         
-        assert target_matrix.getColumns()==this.getOutputCount(): 
+        assert target_matrix.getColumnCount()==this.getOutputCount(): 
             String.format("The target should be %d long (not %d)",
             this.getOutputCount(),
-            target_matrix.getColumns()
+            target_matrix.getColumnCount()
         );        
         
-        assert input_matrix.getRows()==target_matrix.getRows(): 
+        assert input_matrix.getRowCount()==target_matrix.getRowCount(): 
             String.format("The input and target matrices should have the same "+
                 "row count (%d %d)",                    
-                input_matrix.getRows(),
-                target_matrix.getRows()
+                input_matrix.getRowCount(),
+                target_matrix.getRowCount()
         );
         
         Matrix output_matrix = this.classify(input_matrix);
@@ -96,9 +96,9 @@ public class NeuronLayer implements java.io.Serializable{
     }
     
      public Matrix getWeightedSum(Matrix input_matrix){
-        assert input_matrix.getColumns()==this.getInputCount(): 
+        assert input_matrix.getColumnCount()==this.getInputCount(): 
             String.format("The input should be %d long (not %d)",
-            this.getInputCount(),input_matrix.getColumns()
+            this.getInputCount(),input_matrix.getColumnCount()
         );
 
         return input_matrix.getProduct(_weights_matrix).add(_bias_vector);
@@ -189,7 +189,7 @@ public class NeuronLayer implements java.io.Serializable{
         
         inputs.show("Inputs");
         
-        NeuronLayer neu = new NeuronLayer(inputs.getColumns(),targets.getColumns());
+        NeuronLayer neu = new NeuronLayer(inputs.getColumnCount(),targets.getColumnCount());
         neu.show("Layer");
         
         neu.getWeightedSum(inputs).show("Weigthed sums");

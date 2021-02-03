@@ -17,7 +17,7 @@ import java.math.RoundingMode;
 public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     
     public static final int MAX_NEWTON_ITERATIONS=300;
-    public static final int PRECISSION=4;
+    public static final int PRECISSION=6;
     
     private BigDecimal _data;
     private MathContext _mc;
@@ -168,12 +168,19 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     public Real power(int exponent){
         // TODO: Check the testcase new Real(-1).power(0.5)
         return set(_get().pow(exponent));
-        
     }
 
     public Real getPower(int exponent){
         // TODO: Check the testcase new Real(-1).power(0.5)
         return copy().power(exponent);
+    }
+    
+    public Real getExp(){
+        return new Real(Math.exp(this.getPrimitive()));
+    }
+    
+    public Real getLn(){
+        return new Real(Math.log(this.getPrimitive()));
     }
     
     public Real sqr(){
@@ -193,7 +200,6 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
         return set(_get().abs(getMathContext()));
     }
     
-    
     public Real getSqrt(){
         return copy().sqrt();
     }
@@ -204,6 +210,13 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
         // These two are identity cases
         if (isZero() || isUnit())
             return this;
+        
+        // TODO: Remove this cop-out
+        if (true){
+            double val = this.getPrimitive();
+            val = Math.sqrt(val);
+            return set(new BigDecimal(val));
+        }
         
         Real guess = Real.unit();
         // (guess^2-this)/(2*guess)
@@ -220,13 +233,6 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
         }
         return set(guess.getBigDecimal());
     }
-    
-    
-    /*
-    public Real ln(){
-        return set(Math.log(this.getPrimitive()));
-    }
-    */
     
     public Real inv(){
         assert getPrimitive()!=0 : String.format("Error: Real division by zero");
@@ -260,6 +266,22 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
 
     public Real round(MathContext mc){
         return this.set( _get().round(mc) );
+    }
+    
+    public boolean isLess(Real that){
+        return this.getPrimitive() <  that.getPrimitive();
+    }
+    
+    public boolean isGreater(Real that){
+        return this.getPrimitive() >  that.getPrimitive();
+    }
+    
+    public boolean isLessOrEqual(Real that){
+        return isLess(that) || equals(that);
+    }
+
+    public boolean isGreaterOrEqual(Real that){
+        return isGreater(that) || equals(that);
     }
 
     /*
@@ -295,12 +317,12 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     
     public static void main(String[] args){
         
-        Real x = new Real(3);
+        Real x = new Real(2);
+        x.show();
+        x.sqrt();
+        x.show();
         
         
-        x.show();
-        x.multiply(5.0).negate();
-        x.show();
         //unittest();
     }
 }

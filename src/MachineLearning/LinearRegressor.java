@@ -37,10 +37,6 @@ public class LinearRegressor {
         _learningRate = x;
     }
     
-    private Real _learningRate(){
-        return _learningRate;
-    }
-    
     public Vector getCoefficients(){
         return _coefficients.copy();
     }
@@ -48,11 +44,7 @@ public class LinearRegressor {
     public void setCoefficients(Vector x){
         _coefficients = x;
     }
-    
-    private Vector _coefficients(){
-        return _coefficients;
-    }
-    
+        
     public Vector classify(Matrix dataset){
         Matrix result = dataset.getProduct(getCoefficients());
         return result.getColumn(0);
@@ -75,7 +67,7 @@ public class LinearRegressor {
         Matrix raw_dataset = new Matrix(new double[][]{
             {2104,     5,      1,   45  },
             {1416,     3,      2,   40  },
-            {1534,     3,      2,   30  },
+            {1534,     3,      2,   130  },
             //{1534,     3,      2,   30  },
             {852,      2,      1,   36  }
         });
@@ -87,14 +79,13 @@ public class LinearRegressor {
             178
         });
         
-        int N=raw_dataset.getRows();
-        int M=raw_dataset.getColumns();
+        int N=raw_dataset.getRowCount();
+        int M=raw_dataset.getColumnCount();
         Matrix dataset = raw_dataset.copy();
         dataset.show("Raw");
-        Matrix min = Matrix.ones(N,1).getProduct(dataset.getMinVector().getAsRowMatrix());
-        dataset.add(min.negateElements());
-        Matrix max = Matrix.ones(N,1).getProduct(dataset.getMaxVector().getAsRowMatrix());
-        dataset.multiplyElements(max.invertElements());
+        dataset.ground();
+        dataset.scale();
+        
         dataset=(Matrix)dataset.getMergeLR(Matrix.ones(N, 1));
         M++;
         

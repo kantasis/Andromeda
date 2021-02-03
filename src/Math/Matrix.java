@@ -17,8 +17,8 @@ public class Matrix extends GenericMatrix<Real> {
      */
     public Matrix(int rows,int columns){
         super(rows,columns);
-        for(int i=0;i<getRows();i++)
-            for(int j=0;j<getColumns();j++)
+        for(int i=0;i<getRowCount();i++)
+            for(int j=0;j<getColumnCount();j++)
                 set(i,j,new Real(0.0));                
     }
     
@@ -53,6 +53,37 @@ public class Matrix extends GenericMatrix<Real> {
         return (Matrix) this.set(i, j, new Real(v));
     }
     
+    /**
+     * Set the values of the specified row according to the given Vector
+     * 
+     * @param row the row to be changed
+     * @param x the Vector that contains the values
+     * @return this
+     */
+    public Matrix setRow(int row, Vector x){
+        assert this.getColumnCount()==x.getLength() : 
+            String.format("The vector should have %d columns, not %d",
+            this.getColumnCount(), x.getLength());
+        for(int col=0; col<this.getColumnCount();col++)
+            this.set(row, col, x.get(col).getPrimitive());
+        return this;
+    }
+    
+    /**
+     * Set the values of the specified Column according to the given Vector
+     * 
+     * @param col the col to be changed
+     * @param x the Vector that contains the values
+     * @return this
+     */
+    public Matrix setColumn(int col, Vector x){
+        assert this.getRowCount()==x.getLength() : 
+            String.format("The vector should have %d rows, not %d",
+            this.getColumnCount(), x.getLength());
+        for(int row=0; row<this.getColumnCount();row++)
+            this.set(row, col, x.get(row).getPrimitive());
+        return this;
+    }
     
     /**
      * Assign to this matrix the weighted sum of this and another matrix
@@ -78,9 +109,9 @@ public class Matrix extends GenericMatrix<Real> {
      * @return this
      */
     public Matrix add(Vector values){
-        assert values.getLength()==this.getColumns() : String.format("Incompatible sizes %s / %s",this.getColumns(),values.getLength());
-        for (int i=0;i<getRows();i++)
-            for (int j=0;j<getColumns();j++)
+        assert values.getLength()==this.getColumnCount() : String.format("Incompatible sizes %s / %s",this.getColumnCount(),values.getLength());
+        for (int i=0;i<getRowCount();i++)
+            for (int j=0;j<getColumnCount();j++)
                 this.get(i, j).add(values.get(j));
         return this;
     }
@@ -102,8 +133,8 @@ public class Matrix extends GenericMatrix<Real> {
      * @return this
      */
     public Matrix add(Real value){
-        for (int i=0;i<getRows();i++)
-            for (int j=0;j<getColumns();j++)
+        for (int i=0;i<getRowCount();i++)
+            for (int j=0;j<getColumnCount();j++)
                 this.get(i,j).add(value);
         return this;
     }
@@ -114,10 +145,10 @@ public class Matrix extends GenericMatrix<Real> {
      * @return the vector sum of this matrix
      */
     public Vector getSumVector(){
-        Vector result = new Vector(this.getColumns());
-        for (int j=0;j<this.getColumns();j++){
+        Vector result = new Vector(this.getColumnCount());
+        for (int j=0;j<this.getColumnCount();j++){
             Real sum=Real.zero();
-            for (int i=0;i<getRows();i++)
+            for (int i=0;i<getRowCount();i++)
                 sum.add(this.get(i,j));
             result.set(j,sum);
         }
@@ -130,10 +161,10 @@ public class Matrix extends GenericMatrix<Real> {
      * @return the vector product of this matrix
      */
     public Vector getRowProduct(){
-        Vector result = new Vector(this.getColumns());
-        for (int j=0;j<this.getColumns();j++){
+        Vector result = new Vector(this.getColumnCount());
+        for (int j=0;j<this.getColumnCount();j++){
             Real sum= Real.unit();
-            for (int i=0;i<getRows();i++)
+            for (int i=0;i<getRowCount();i++)
                 sum.multiply(this.get(i,j));
             result.set(j,sum);
         }
@@ -146,9 +177,14 @@ public class Matrix extends GenericMatrix<Real> {
      * @return the vector average of this matrix
      */
     public Vector getAverageVector(){
-        return (Vector) this.getSumVector().multiply(1.0/this.getRows());
+        return (Vector) this.getSumVector().multiply(1.0/this.getRowCount());
     }
     
+    /**
+     * Get the Standard Deviation of each column
+     * 
+     * @return a row-vector of the STDs
+     */
     public Vector getStdVector(){
         return this.getSumofSquaresVector().add(
             (Vector) this
@@ -157,11 +193,59 @@ public class Matrix extends GenericMatrix<Real> {
                 .negateElements()
         );
     }
-    
+   
+    /**
+     * Get the sum of squares of each column
+     * 
+     * @return a row-vector of the sum of squares
+     */
     public Vector getSumofSquaresVector(){
-        Vector result = new Vector(this.getColumns());
+        Vector result = new Vector(this.getColumnCount());
         for (int i=0;i<result.getLength();i++)
             result.set(i, this.getColumn(i).getSumofSquares());
+        return result;
+    }
+    
+    /**
+     * Get the norm of each column
+     * 
+     * @return a row-vector of the norms
+     */
+    public Vector getNormVector(){
+        return this.getSumofSquaresVector().sqrt();
+    }
+    
+    /**
+     * Get the index of the max value for each column
+     * 
+     * @return an integer array with the indices of the max value of each column
+     */
+    public Integer[] getArgMaxList(){
+        Integer[] result = new Integer[this.getColumnCount()];
+        Vector max_vector = this.getMaxVector();
+        for (int j=0;j<this.getColumnCount();j++)
+            for (int i=0;i<getRowCount();i++)
+                if (this.get(i,j).equals(max_vector.get(j))){
+                    result[j]=i;
+                    break;
+                }
+        return result;
+    }
+    
+    /**
+     * Get the index of the min value for each column
+     * 
+     * @return an integer array with the indices of the min value of each column
+     */
+    public Integer[] getArgMinList(){
+        Integer[] result = new Integer[this.getColumnCount()];
+        Vector min_vector = this.getMinVector();
+        for (int j=0;j<this.getColumnCount();j++)
+            for (int i=0;i<getRowCount();i++)
+                if (this.get(i,j).equals(min_vector.get(j))){
+                    result[j]=i;
+                    break;
+                }
         return result;
     }
     
@@ -171,10 +255,10 @@ public class Matrix extends GenericMatrix<Real> {
      * @return the vector max of this matrix
      */
     public Vector getMaxVector(){
-        Vector result = new Vector(this.getColumns());
-        for (int j=0;j<this.getColumns();j++){
+        Vector result = new Vector(this.getColumnCount());
+        for (int j=0;j<this.getColumnCount();j++){
             Real max=this.get(0,j);
-            for (int i=1;i<getRows();i++)
+            for (int i=1;i<getRowCount();i++)
                 if (this.get(i,j).getPrimitive()>max.getPrimitive())
                     max=this.get(i,j);
             result.set(j,max);
@@ -188,10 +272,10 @@ public class Matrix extends GenericMatrix<Real> {
      * @return the vector min of this matrix
      */
     public Vector getMinVector(){
-        Vector result = new Vector(this.getColumns());
-        for (int j=0;j<this.getColumns();j++){
+        Vector result = new Vector(this.getColumnCount());
+        for (int j=0;j<this.getColumnCount();j++){
             Real min=this.get(0,j);
-            for (int i=1;i<getRows();i++)
+            for (int i=1;i<getRowCount();i++)
                 if (this.get(i,j).getPrimitive()<min.getPrimitive())
                     min=this.get(i,j);
             result.set(j,min);
@@ -212,7 +296,7 @@ public class Matrix extends GenericMatrix<Real> {
         data.add(neg_average);
         result = (Matrix) data.getTransposed()
             .getProduct(data)
-            .multiply(new Real(getRows()).inv());
+            .multiply(new Real(getRowCount()).inv());
         return result;
     }
     
@@ -223,17 +307,17 @@ public class Matrix extends GenericMatrix<Real> {
      */
     public Matrix getProduct(Matrix that){
         GenericMatrix temp = super.getProduct(that);
-        Matrix result = new Matrix(temp.getRows(),temp.getColumns());
-        for (int i=0;i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++)
+        Matrix result = new Matrix(temp.getRowCount(),temp.getColumnCount());
+        for (int i=0;i<result.getRowCount();i++)
+            for (int j=0;j<result.getColumnCount();j++)
                 result.set(i, j, (Real)temp.get(i, j));
         return result;
     }
     
     public Matrix getTransposed(){
-        Matrix result = new Matrix(this.getColumns(),this.getRows());
-        for (int i=0;i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++)
+        Matrix result = new Matrix(this.getColumnCount(),this.getRowCount());
+        for (int i=0;i<result.getRowCount();i++)
+            for (int j=0;j<result.getColumnCount();j++)
                 result.set(i, j, this.get(j,i));
         return result;   
     }
@@ -252,9 +336,9 @@ public class Matrix extends GenericMatrix<Real> {
             Logger.log(Logger.LL_WARNING, "Trying to do PCA to a non-zero-average matrix");
         Matrix cov = this.getCovariance();
         ArrayList<Vector> eigenVectors = cov.getEigenVectors();
-        Matrix result = new Matrix(cov.getRows(),cov.getColumns());
-        for (int i=0;i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++)
+        Matrix result = new Matrix(cov.getRowCount(),cov.getColumnCount());
+        for (int i=0;i<result.getRowCount();i++)
+            for (int j=0;j<result.getColumnCount();j++)
                 result.set(i, j, eigenVectors.get(i).get(j));
         Vector eigenValues = this.getEigenvalues();
         return new Matrix[]{result,Matrix.diag(eigenValues)};
@@ -315,9 +399,9 @@ public class Matrix extends GenericMatrix<Real> {
      * @return The diagonal of the matrix
      */
     public Vector diag(){
-        int x = this.getRows();
-        if (x<this.getColumns())
-            x=this.getColumns();
+        int x = this.getRowCount();
+        if (x<this.getColumnCount())
+            x=this.getColumnCount();
         Vector result = new Vector(x);
         for (int i=0;i<x;i++)
             result.set(i,this.get(i,i));
@@ -340,11 +424,11 @@ public class Matrix extends GenericMatrix<Real> {
      * @return a new Matrix such that A*B=I
      */
     public Matrix getInverse(){
-        assert this.getColumns()==this.getRows() : String.format("For now I can not calculate pseudo-inverted matrix",this.getSize());
+        assert this.getColumnCount()==this.getRowCount() : String.format("For now I can not calculate pseudo-inverted matrix",this.getSize());
         Real det = this.det();
         assert !det.isZero() : String.format("The matrix is not invertible",this.getSize());
         
-        Matrix result = Matrix.eye(this.getRows());
+        Matrix result = Matrix.eye(this.getRowCount());
         Matrix temp = (Matrix) this.copy();
         
         temp.setAugmented(result);
@@ -361,14 +445,14 @@ public class Matrix extends GenericMatrix<Real> {
      */
     public Vector getVector(){
         //returns by value matrix as a vector
-        assert this.getColumns()==1 || this.getRows()==1 : String.format("Cannot vectorize (%s) matrix ",this.getSize());
+        assert this.getColumnCount()==1 || this.getRowCount()==1 : String.format("Cannot vectorize (%s) matrix ",this.getSize());
         Vector result;
-        if (this.getColumns()==1){
-            result = new Vector(this.getRows());
+        if (this.getColumnCount()==1){
+            result = new Vector(this.getRowCount());
             for (int i=0;i<result.getLength();i++)
                 result.set(i,this.get(i,0));
         }else{
-            result = new Vector(this.getColumns());
+            result = new Vector(this.getColumnCount());
             for (int j=0;j<result.getLength();j++)
                result.set(j,this.get(0,j));
         }
@@ -381,23 +465,33 @@ public class Matrix extends GenericMatrix<Real> {
      * @return a new matrix that is a copy of this one
      */
     public Matrix copy(){
-        Matrix result = new Matrix (this.getRows(),this.getColumns());
-        for (int i=0;i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++)
+        Matrix result = new Matrix (this.getRowCount(),this.getColumnCount());
+        for (int i=0;i<result.getRowCount();i++)
+            for (int j=0;j<result.getColumnCount();j++)
                 result.set(i,j,this.get(i,j).copy());
         return result;
     }
 
+    /**
+     * Replace all elements with their inverse value
+     * 
+     * @return this matrix
+     */
     public Matrix invertElements(){
-        for (int i=0;i<getRows();i++)
-            for (int j=0;j<getColumns();j++)
+        for (int i=0;i<getRowCount();i++)
+            for (int j=0;j<getColumnCount();j++)
                 this.get(i, j).inv();
         return this;
     }
 
+    /**
+     * Replace all elements with their negative value
+     * 
+     * @return this matrix
+     */
     public Matrix negateElements(){
-        for (int i=0;i<getRows();i++)
-            for (int j=0;j<getColumns();j++)
+        for (int i=0;i<getRowCount();i++)
+            for (int j=0;j<getColumnCount();j++)
                 this.get(i, j).negate();
         return this;
     }
@@ -411,11 +505,10 @@ public class Matrix extends GenericMatrix<Real> {
      */    
     public Vector getColumn(int col){
         this.assertIndexBound(0, col);
-        Vector result = new Vector(this.getRows());
+        Vector result = new Vector(this.getRowCount());
         //System.out.println(this.getRows());
-        for(int row=0;row<this.getRows();row++){
+        for(int row=0;row<this.getRowCount();row++)
             result.set(row, this.get(row, col).getPrimitive());
-        }
         return result;
     }
     
@@ -428,14 +521,11 @@ public class Matrix extends GenericMatrix<Real> {
      */    
     public Vector getRow(int row){
         this.assertIndexBound(row , 0);
-        Vector result = new Vector(this.getColumns());
-        //System.out.println(this.getRows());
-        for(int col=0;col<this.getColumns();col++){
+        Vector result = new Vector(this.getColumnCount());
+        for(int col=0;col<this.getColumnCount();col++)
             result.set(col, this.get(row, col).getPrimitive());
-        }
         return result;
     }
-    
     
     /**
      * Calculates the solution of the linear system
@@ -447,19 +537,19 @@ public class Matrix extends GenericMatrix<Real> {
      */
     public ArrayList<Vector> solveLinearSystem(Vector b){
         ArrayList<Vector> result = new ArrayList<Vector>();
-        result.add(new Vector(this.getRows()));
+        result.add(new Vector(this.getRowCount()));
         Matrix echelon = this.copy();
         boolean homogenous = b==null || b.isZero();
         Vector y;
         if (b==null)
-            y = new Vector(this.getRows());
+            y = new Vector(this.getRowCount());
         else
             y = b.copy();
         echelon.setAugmented(y);
             echelon.gaussianElimination();
         echelon.setAugmented(null);
         
-        for (int col=0;col<echelon.getColumns();col++){
+        for (int col=0;col<echelon.getColumnCount();col++){
             boolean isPivot=false;
             boolean pivotColumn=false;
             // This could go up to echelon.getRows() but since this is an 
@@ -512,7 +602,7 @@ public class Matrix extends GenericMatrix<Real> {
             Matrix temp = this.copy();
             
             // Reduce each diagonal element by the eigenvalue
-            for (int j=0;j<temp.getColumns();j++)
+            for (int j=0;j<temp.getColumnCount();j++)
                 temp.get(j, j).add(eigenValue.getNegative());
             
             ArrayList<Vector> solutions = temp.solveLinearSystem(null);
@@ -534,15 +624,15 @@ public class Matrix extends GenericMatrix<Real> {
      */
     public Matrix gaussianElimination(){
         // For all the rows in the Matrix
-        for (int core_row=0; core_row<this.getRows();core_row++){
+        for (int core_row=0; core_row<this.getRowCount();core_row++){
             int col=core_row;
             // Find the proper column of the pivot element
-            for (;col<this.getColumns();col++){
+            for (;col<this.getColumnCount();col++){
                 
                 // in case the element is zero ...
                 if (this.get(core_row, col).isZero()){
                     // ... find a non-zero in the same column ...
-                    for (int row=col+1; row<this.getRows(); row++){
+                    for (int row=col+1; row<this.getRowCount(); row++){
                         if (!this.get(row, col).isZero()){
                             // ... and swap rows
                             this._rowSwap(core_row, row);
@@ -557,11 +647,11 @@ public class Matrix extends GenericMatrix<Real> {
             } 
             
             // This will trigger if *all* elements of the row are 0
-            if (col==this.getColumns())
+            if (col==this.getColumnCount())
                 continue;
             
             // for each row in the matrix ...
-            for (int row=0; row<this.getRows(); row++){
+            for (int row=0; row<this.getRowCount(); row++){
                 
                 // ... except the current one ..
                 if (row==core_row)
@@ -580,12 +670,12 @@ public class Matrix extends GenericMatrix<Real> {
         }
         
         // Now do a second pass of rows ...
-        for (int row=0; row<this.getRows();row++){
+        for (int row=0; row<this.getRowCount();row++){
             int col = row;
             boolean pivot_found=false;
             
             // ... find the pivot element ...
-            for (;col<this.getColumns();col++){
+            for (;col<this.getColumnCount();col++){
                 if (! this.get(row, col).isZero()){
                     pivot_found=true;
                     break;
@@ -616,7 +706,7 @@ public class Matrix extends GenericMatrix<Real> {
      * @param divisor the Real which the row will be divided by
      */
     public void _rowDivide(int row, Real divisor){
-        for (int col=0; col<this.getColumns();col++)
+        for (int col=0; col<this.getColumnCount();col++)
             this.get(row, col).div(divisor);
         if (getAugmented()!=null)
             ((Matrix) getAugmented())._rowDivide(row, divisor);
@@ -629,9 +719,9 @@ public class Matrix extends GenericMatrix<Real> {
      */
     public Polynomial getCharacteristicPolynomial(){
         assertSquare();
-        GenericMatrix<Polynomial> lamda = new GenericMatrix<Polynomial>(this.getRows(),this.getColumns());
-        for (int i=0;i<lamda.getRows();i++)
-            for (int j=0;j<lamda.getColumns();j++)
+        GenericMatrix<Polynomial> lamda = new GenericMatrix<Polynomial>(this.getRowCount(),this.getColumnCount());
+        for (int i=0;i<lamda.getRowCount();i++)
+            for (int j=0;j<lamda.getColumnCount();j++)
                 if (i==j)
                     lamda.set(i, j, new Polynomial(this.get(i,j).getPrimitive(),-1.0));
                 else
@@ -644,48 +734,168 @@ public class Matrix extends GenericMatrix<Real> {
     }
     
     /**
+     * Returns a matrix with random values from 0 to 1
+     * 
+     * @param n the resulting matrix rows
+     * @param m the resulting matrix columns
+     * @return a matrix with random values 0-1
+     */
+    public static Matrix random(int n, int m){
+        Matrix result = new Matrix(n,m);
+        Random rnd = new Random();
+        for (int i=0;i<result.getRowCount();i++)
+            for (int j=0;j<result.getColumnCount();j++)
+                result.set(i, j, rnd.nextDouble());
+        return result;
+    }
+    
+    /**
      * Temporary: Perform some benchmarkings for the matrix configuration
      * 
      * @param sz the size of the matrices involved
      */
     public static void unittest(int sz){
-        Matrix a = new Matrix(sz,sz);
-        Matrix b = new Matrix(sz,sz);
-        Random rnd = new Random();
-        for (int i=0;i<sz;i++)
-            for (int j=0;j<sz;j++){
-                a.set(i, j, rnd.nextDouble());
-                b.set(i, j, rnd.nextDouble());
-            }
-
+        Matrix a = Matrix.random(sz, sz);
+        Matrix b = Matrix.random(sz, sz);
         GenericMatrix c = a.getProduct(b);
     }
     
-    public Matrix normalizeMinmax(){
-        int N=getRows();
-        int M=getColumns();
-        
+    /**
+     * Subtract the minimum Vector from each row
+     * 
+     * @return this matrix
+     */
+    public Matrix ground(){
+        int N = this.getRowCount();
         Matrix min_vector = Matrix.ones(N,1).getProduct(getMinVector().getAsRowMatrix());
         add(min_vector.negateElements());
-        
-        Matrix max_vector = Matrix.ones(N,1).getProduct(getMaxVector().getAsRowMatrix());
-        multiplyElements(max_vector.invertElements());
-        
         return this;
     }
 
-    public Matrix normalizeAvgstd(){
-        int N=getRows();
-        int M=getColumns();
-        
-        Matrix min_vector = Matrix.ones(N,1).getProduct(getAverageVector().getAsRowMatrix());
-        add(min_vector.negateElements());
-        
-        Matrix max_vector = Matrix.ones(N,1).getProduct(getStdVector().getAsRowMatrix());
-        multiplyElements(max_vector.invertElements());
-        
+    /**
+     * Subtract the average Vector from each row
+     * 
+     * @return this matrix
+     */
+    public Matrix center(){
+        int N = this.getRowCount();
+        Matrix avg_vector = Matrix.ones(N,1).getProduct(getAverageVector().getAsRowMatrix());
+        add(avg_vector.negateElements());
         return this;
     }
+
+    /**
+     * Divide each row by the max Vector
+     * 
+     * @return this matrix
+     */
+    public Matrix scale(){
+        int N = this.getRowCount();
+        Matrix max_vector = Matrix.ones(N,1).getProduct(getMaxVector().getAsRowMatrix());
+        multiplyElements(max_vector.invertElements());
+        return this;
+    }
+
+    /**
+     * Divide each row by the std Vector
+     * 
+     * @return this matrix
+     */    
+    public Matrix standarize(){
+        int N = this.getRowCount();
+        Matrix max_vector = Matrix.ones(N,1).getProduct(getStdVector().getAsRowMatrix());
+        multiplyElements(max_vector.invertElements());
+        return this;
+    }
+    
+    /**
+     * Divide each row by the norm Vector
+     * 
+     * @return this matrix
+     */
+    public Matrix normalize(){
+        int N = this.getRowCount();
+        Matrix max_vector = Matrix.ones(N,1).getProduct(this.getNormVector().getAsRowMatrix());
+        multiplyElements(max_vector.invertElements());
+        return this;
+    }
+    
+    /**
+     * Create a new matrix with only the rows specified by the indices argument
+     * 
+     * @param indices the indices of this matrix to be copied to the output matrix
+     * @return the resulting matrix
+     */
+    public Matrix pickRows(Integer[] indices){
+        Matrix result = new Matrix(indices.length,this.getColumnCount());
+        for (int i=0;i<result.getRowCount();i++)
+            result.setRow(i, this.getRow(indices[i]));
+        return result;
+    }
+    
+    /**
+     * Create a new matrix with only the rows specified by the indices argument
+     * 
+     * @param indices an boolean array which specifies if the row should be 
+     * copied or not
+     * @return the resulting matrix
+     */
+    public Matrix pickRows(boolean[] indices){
+        assert this.getRowCount()==indices.length: 
+            String.format("Matrix rows (%d) and indices length(%d) do not have the same size",
+            this.getRowCount(), indices.length);
+        
+        int true_cnt = 0;
+        for (boolean index : indices)
+            if (index)
+                true_cnt++;
+        
+        Matrix result = new Matrix(true_cnt,this.getColumnCount());
+        int result_idx=0;
+        for (int i=0;i<this.getRowCount();i++)
+            if (indices[i])
+                result.setRow(result_idx++, this.getRow(i));
+        return result;
+    }
+    
+    /**
+     * Create a new matrix with only the columns specified by the indices argument
+     * 
+     * @param indices the indices of this matrix to be copied to the output matrix
+     * @return the resulting matrix
+     */
+    public Matrix pickColumns(Integer[] indices){
+        Matrix result = new Matrix(this.getRowCount(),indices.length);
+        for (int i=0;i<result.getColumnCount();i++)
+            result.setColumn(i, this.getColumn(indices[i]));
+        return result;
+    }
+    
+    /**
+     * Create a new matrix with only the columns specified by the indices argument
+     * 
+     * @param indices an boolean array which specifies if the column should be 
+     * copied or not
+     * @return the resulting matrix
+     */
+    public Matrix pickColumns(boolean[] indices){
+        assert this.getColumnCount()==indices.length: 
+            String.format("Matrix columns (%d) and indices length(%d) do not have the same size",
+            this.getColumnCount(), indices.length);
+        
+        int true_cnt = 0;
+        for (boolean index : indices)
+            if (index)
+                true_cnt++;
+        
+        Matrix result = new Matrix(true_cnt,this.getColumnCount());
+        int result_idx=0;
+        for (int i=0;i<this.getColumnCount();i++)
+            if (indices[i])
+                result.setColumn(result_idx++, this.getColumn(i));
+        return result;
+    }
+    
     
     /**
      * The main executable function.
@@ -694,77 +904,9 @@ public class Matrix extends GenericMatrix<Real> {
      * @param args Commmand line arguments
      */
     public static void main(String[] args){
-        //double[][] data = {{0,1,4,1,2},{-1,-2,0,9,-1},{1,2,0,-6,1},{2,5,4,-10,4},{0,0,0,0,0}};
-        //double[][] data = {{3,6,-8},{0,0,6},{0,0,2}};
-        //double[][] data = {{1,-3,3},{3,-5,3},{6,-6,4}};
-        double[][] data = {{1,2,0},{0,3,0},{2,-4,2}};   // Wikipedia diagonalization example
-        //double[][] data = {{2,0,0},{0,3,4},{0,4,9}};
-        //double[][] data = {{0,1},{-2,-3}};
         
-        Matrix x = new Matrix(data);
-        x.show("Original Matrix");
-        //x.getInverse().show();
+        Core.Tests.diagonalization_test();
         
-        x.getInverse().show("Inverse Matrix");
-        x.getProduct(x.getInverse()).show("Product Matrix");
-        
-        Logger.log("------------- Test Diagonalization --------------------");
-        Logger.indent();
-        x.getCharacteristicPolynomial().show("Char poly");
-        Vector eigenvalues = x.getCharacteristicPolynomial().getRoots();
-        eigenvalues.show("Eigenvalues");
-        
-        ArrayList<Vector> results = x.getEigenVectors();
-        for (Vector i:results) i.show("EigVec");
-        
-        Matrix D = Matrix.diag(eigenvalues);
-        
-        Matrix P = new Matrix(x.getRows(),x.getColumns());
-        for (int i=0;i<P.getRows();i++)
-            for (int j=0;j<P.getColumns();j++)
-                P.set(i, j, results.get(j).get(i));
-
-        
-        D.show("Diagonal");
-        P.show("P");
-        P.getInverse().show("P^");
-        Logger.log("---");
-        
-        P.getProduct(D).getProduct(P.getInverse()).show("PDP'");
-        x.show("A");
-        
-        P.getInverse().getProduct(x).getProduct(P).show("P'AP");
-        D.show("D");
-        
-        Logger.dedent();
-        
-        //unittest(100);
-        Logger.log("------------- Test Inversion & Multiplication --------------------");
-        Logger.indent();
-        
-        Matrix a1 = new Matrix(new double[][] { // Wikipedia diagonalization example
-            {1,2,0},{0,3,0},{2,-4,2}
-        });
-        
-        Matrix p = new Matrix(new double[][]{
-            {-1,     0,      -1  },
-            {-1,     0,      0   },
-            {2,      1,      2   }
-        });
-        Matrix p1 = new Matrix(new double[][]{
-            {0,     -1,      0  },
-            {2,      0,      1  },
-            {-1,     1,      0  }
-        });
-        p.show("P");
-        p.getInverse().show("P`");
-        p1.show("P1");
-        p1.getInverse().show("P1`");
-        
-        p1.getProduct(p).show("P1 * P");
-        p.getInverse().getProduct(p).show("P` * P");
-        
-        //p1.getProduct(a1).getProduct(p).show("Result");
-        Logger.dedent();
     }
+    
 }

@@ -69,11 +69,11 @@ public class SparseMatrix extends Matrix {
     }
     
     public int getNobcount(){
-        return getColumns()*getRows() - getPopcount();
+        return getColumnCount()*getRowCount() - getPopcount();
     }
     
     public double getFillPct(){
-        return getPopcount()/(getColumns()*getRows());
+        return getPopcount()/(getColumnCount()*getRowCount());
     }
 
     
@@ -171,9 +171,9 @@ public class SparseMatrix extends Matrix {
     public Matrix getMatrix(){
         if(this.getFillPct()>.5)
             Logger.log(Logger.LL_WARNING,"Warning: Turning a SparseMatrix with fill percentage %5.2f%% into a matrix",this.getFillPct()*100);
-        Matrix result = new Matrix(this.getRows(),this.getColumns());
-        for(int i=0; i<result.getRows();i++)
-            for (int j=0;j<result.getColumns();j++)
+        Matrix result = new Matrix(this.getRowCount(),this.getColumnCount());
+        for(int i=0; i<result.getRowCount();i++)
+            for (int j=0;j<result.getColumnCount();j++)
                 result.set(i, j, this.get(i, j));
         return result;
     }

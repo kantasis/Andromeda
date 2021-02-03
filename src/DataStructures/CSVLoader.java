@@ -43,7 +43,7 @@ public class CSVLoader {
     }
     
     public static void main(String[] args){
-        String filename="C:\\Users\\kostis\\Downloads\\temp\\HistoricalQuotes.csv";
+        String filename="C:\\Users\\kostis\\Desktop\\junk.txt";
         System.out.println("Lets read");
         ArrayList <String[]> rows = readCSV(filename);
         for (String[] row : rows){

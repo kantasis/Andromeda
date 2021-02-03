@@ -43,7 +43,7 @@ public class MultilayerNetwork  {
     }
       
     public Matrix classify(Matrix input){
-        assert input.getColumns()==getInputCount(): String.format("Incompatible input size (%d, %d)",input.getColumns(),getInputCount());
+        assert input.getColumnCount()==getInputCount(): String.format("Incompatible input size (%d, %d)",input.getColumnCount(),getInputCount());
         
         Matrix output = input;
         for (int i=0;i<getLayerCount();i++){
@@ -54,23 +54,23 @@ public class MultilayerNetwork  {
     
     
     public void train(Matrix input_matrix, Matrix target_matrix, Real learningRate){
-        assert input_matrix.getColumns()==this.getInputCount(): 
+        assert input_matrix.getColumnCount()==this.getInputCount(): 
             String.format("The input should be %d long (not %d)",
             this.getInputCount(),
-            input_matrix.getColumns()
+            input_matrix.getColumnCount()
         );        
         
-        assert target_matrix.getColumns()==this.getOutputCount(): 
+        assert target_matrix.getColumnCount()==this.getOutputCount(): 
             String.format("The target should be %d long (not %d)",
             this.getOutputCount(),
-            target_matrix.getColumns()
+            target_matrix.getColumnCount()
         );        
         
-        assert input_matrix.getRows()==target_matrix.getRows(): 
+        assert input_matrix.getRowCount()==target_matrix.getRowCount(): 
             String.format("The input and target matrices should have the same "+
                 "row count (%d %d)",                    
-                input_matrix.getRows(),
-                target_matrix.getRows()
+                input_matrix.getRowCount(),
+                target_matrix.getRowCount()
         );
         // TODO: maybe some optimization can be done here cause train calls classify again
       
@@ -97,6 +97,11 @@ public class MultilayerNetwork  {
         for (int i=0;i<this.getLayerCount();i++)
             this.getLayer(i).show(x+" Layer #"+i);
     }
+
+    public void teach(MultilayerNetwork that,Matrix dataset, Real rate){
+        Matrix target_matrix = this.classify(dataset);
+        that.train(dataset, target_matrix, rate);
+    }
     
     /**
      * Unittest the MLN class.
@@ -105,89 +110,36 @@ public class MultilayerNetwork  {
     public static void unittest(){
         int max_iterations = 10000;
         Real rate = new Real(4);
-        
         Matrix inputs = new Matrix(new double[][]{
             {0,0},
             {0,1},
             {1,0},
             {1,1},
         });
-        
         Matrix targets = new Matrix(new double[][]{
-            {0},
-            {1},
-            {1},
-            {0},
+            {0,1},
+            {1,1},
+            {1,0},
+            {0,0},
         });
         
-        MultilayerNetwork neu = new MultilayerNetwork(inputs.getColumns(),2,targets.getColumns());
+        MultilayerNetwork neu = new MultilayerNetwork(inputs.getColumnCount(),2,targets.getColumnCount());
         
         Random rnd = new Random();
         Logger.setLogLevel(Logger.LL_ERROR);
         
         for (int pct = 0; pct<100; pct++){
             Logger.log("Completed %3d%%",pct);
-            for (int i=0;i<max_iterations;i++){
-                int idx = rnd.nextInt(inputs.getRows());
+            for (int i=0;i<max_iterations/100;i++){
+                int idx = rnd.nextInt(inputs.getRowCount());
                 neu.train(inputs.getRow(idx).getAsRowMatrix(), targets.getRow(idx).getAsRowMatrix(), rate);
             }
         }
-        
-        neu.show("Final");
         neu.classify(inputs).show("\nResults");
     }
     
     public static void main(String[] args) {
-        //unittest();
-        
-        /*
-        Matrix inputs = new Matrix(new double[][]{
-            {0.05,0.1},
-        });
-        
-        Matrix targets = new Matrix(new double[][]{
-            {0.01,0.99},
-        });
-        
-        Real rate = new Real(0.5);
-        
-        MultilayerNetwork neu = new MultilayerNetwork(inputs.getColumns(),2,targets.getColumns());
-        neu.getLayer(0)._set(new Matrix(new double[][]{
-            {.15,.20},
-            {.25,.30},
-        }).getTransposed(),new Vector(0.35,0.35));
-        neu.getLayer(1)._set(new Matrix(new double[][]{
-            {.4,.45},
-            {.5,.55},
-        }).getTransposed(),new Vector(0.6,0.6));
-        
-        neu.show("Original");
-        neu.classify(inputs).show("Outputs");
-        neu.train(inputs, targets, rate);
-        neu.show("TRAINED");
-        */
         unittest();
     }
     
-    /*
-    public void teach(MultilayerNetwork that,Vector pattern){
-        Vector target = this.classify(pattern);
-        that.train(pattern, target);
-    }
-    */
-    
-    /*
-    public double[] evaluate(double[][] patterns, double[][] target){
-        double[] err;
-        double[] result=new double[target[0].length];
-        for (int i=0;i<patterns.length;i++){
-            double[] p_out = classify(patterns[i]);
-            for(int j=0;j<p_out.length;j++)
-                result[j]+=Math.pow(target[i][j]-p_out[j],2);
-        }
-        for(int j=0;j<result.length;j++)
-            result[j]=Math.sqrt(result[j]);
-        return result;
-    }
-      */
 }
