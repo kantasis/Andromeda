@@ -112,7 +112,7 @@ public class Matrix extends GenericMatrix<Real> {
         assert values.getLength()==this.getColumnCount() : String.format("Incompatible sizes %s / %s",this.getColumnCount(),values.getLength());
         for (int i=0;i<getRowCount();i++)
             for (int j=0;j<getColumnCount();j++)
-                this.get(i, j).add(values.get(j));
+                this.valueAt(i, j).add(values.get(j));
         return this;
     }
     
@@ -135,7 +135,7 @@ public class Matrix extends GenericMatrix<Real> {
     public Matrix add(Real value){
         for (int i=0;i<getRowCount();i++)
             for (int j=0;j<getColumnCount();j++)
-                this.get(i,j).add(value);
+                this.valueAt(i,j).add(value);
         return this;
     }
     
@@ -149,7 +149,7 @@ public class Matrix extends GenericMatrix<Real> {
         for (int j=0;j<this.getColumnCount();j++){
             Real sum=Real.zero();
             for (int i=0;i<getRowCount();i++)
-                sum.add(this.get(i,j));
+                sum.add(this.valueAt(i,j));
             result.set(j,sum);
         }
         return result;
@@ -165,7 +165,7 @@ public class Matrix extends GenericMatrix<Real> {
         for (int j=0;j<this.getColumnCount();j++){
             Real sum= Real.unit();
             for (int i=0;i<getRowCount();i++)
-                sum.multiply(this.get(i,j));
+                sum.multiply(this.valueAt(i,j));
             result.set(j,sum);
         }
         return result;
@@ -189,7 +189,6 @@ public class Matrix extends GenericMatrix<Real> {
         Vector sumOfSquaresAvg_vec = (Vector) this.getSumofSquaresVector().multiply(1.0/this.getRowCount());
         Vector squaredAvg_vec = this.getAverageVector().power(2);
         Vector result = (Vector) sumOfSquaresAvg_vec.copy().diff(squaredAvg_vec);
-        
         return result.sqrt();
     }
    
@@ -224,7 +223,7 @@ public class Matrix extends GenericMatrix<Real> {
         Vector max_vector = this.getMaxVector();
         for (int j=0;j<this.getColumnCount();j++)
             for (int i=0;i<getRowCount();i++)
-                if (this.get(i,j).equals(max_vector.get(j))){
+                if (this.valueAt(i,j).equals(max_vector.get(j))){
                     result[j]=i;
                     break;
                 }
@@ -241,7 +240,7 @@ public class Matrix extends GenericMatrix<Real> {
         Vector min_vector = this.getMinVector();
         for (int j=0;j<this.getColumnCount();j++)
             for (int i=0;i<getRowCount();i++)
-                if (this.get(i,j).equals(min_vector.get(j))){
+                if (this.valueAt(i,j).equals(min_vector.get(j))){
                     result[j]=i;
                     break;
                 }
@@ -256,10 +255,10 @@ public class Matrix extends GenericMatrix<Real> {
     public Vector getMaxVector(){
         Vector result = new Vector(this.getColumnCount());
         for (int j=0;j<this.getColumnCount();j++){
-            Real max=this.get(0,j);
+            Real max=this.valueAt(0,j);
             for (int i=1;i<getRowCount();i++)
-                if (this.get(i,j).getPrimitive()>max.getPrimitive())
-                    max=this.get(i,j);
+                if (this.valueAt(i,j).getPrimitive()>max.getPrimitive())
+                    max=this.valueAt(i,j);
             result.set(j,max);
         }
         return result;
@@ -273,10 +272,10 @@ public class Matrix extends GenericMatrix<Real> {
     public Vector getMinVector(){
         Vector result = new Vector(this.getColumnCount());
         for (int j=0;j<this.getColumnCount();j++){
-            Real min=this.get(0,j);
+            Real min=this.valueAt(0,j);
             for (int i=1;i<getRowCount();i++)
-                if (this.get(i,j).getPrimitive()<min.getPrimitive())
-                    min=this.get(i,j);
+                if (this.valueAt(i,j).getPrimitive()<min.getPrimitive())
+                    min=this.valueAt(i,j);
             result.set(j,min);
         }
         return result;
@@ -309,7 +308,7 @@ public class Matrix extends GenericMatrix<Real> {
         Matrix result = new Matrix(temp.getRowCount(),temp.getColumnCount());
         for (int i=0;i<result.getRowCount();i++)
             for (int j=0;j<result.getColumnCount();j++)
-                result.set(i, j, (Real)temp.get(i, j));
+                result.set(i, j, (Real)temp.valueAt(i, j));
         return result;
     }
     
@@ -317,7 +316,7 @@ public class Matrix extends GenericMatrix<Real> {
         Matrix result = new Matrix(this.getColumnCount(),this.getRowCount());
         for (int i=0;i<result.getRowCount();i++)
             for (int j=0;j<result.getColumnCount();j++)
-                result.set(i, j, this.get(j,i));
+                result.set(i, j, this.valueAt(j,i));
         return result;   
     }
     
@@ -403,7 +402,7 @@ public class Matrix extends GenericMatrix<Real> {
             x=this.getColumnCount();
         Vector result = new Vector(x);
         for (int i=0;i<x;i++)
-            result.set(i,this.get(i,i));
+            result.set(i,this.valueAt(i,i));
         return result;
     }
     
@@ -449,11 +448,11 @@ public class Matrix extends GenericMatrix<Real> {
         if (this.getColumnCount()==1){
             result = new Vector(this.getRowCount());
             for (int i=0;i<result.getLength();i++)
-                result.set(i,this.get(i,0));
+                result.set(i,this.valueAt(i,0));
         }else{
             result = new Vector(this.getColumnCount());
             for (int j=0;j<result.getLength();j++)
-               result.set(j,this.get(0,j));
+               result.set(j,this.valueAt(0,j));
         }
         return result;
     }
@@ -467,9 +466,23 @@ public class Matrix extends GenericMatrix<Real> {
         Matrix result = new Matrix (this.getRowCount(),this.getColumnCount());
         for (int i=0;i<result.getRowCount();i++)
             for (int j=0;j<result.getColumnCount();j++)
-                result.set(i,j,this.get(i,j).copy());
+                result.set(i,j,this.valueAt(i,j).copy());
         return result;
     }
+    
+    /**
+     * Create raise all elements to the power
+     * 
+     * @param exponent the exponent to be raised to
+     * @return this
+     */
+    public Matrix power(int exponent){
+        for (int i=0;i<this.getRowCount();i++)
+            for (int j=0;j<this.getColumnCount();j++)
+                this.valueAt(i, j).power(exponent);
+        return this;
+    }
+    
 
     /**
      * Replace all elements with their inverse value
@@ -479,7 +492,7 @@ public class Matrix extends GenericMatrix<Real> {
     public Matrix invertElements(){
         for (int i=0;i<getRowCount();i++)
             for (int j=0;j<getColumnCount();j++)
-                this.get(i, j).inv();
+                this.valueAt(i, j).inv();
         return this;
     }
 
@@ -491,7 +504,7 @@ public class Matrix extends GenericMatrix<Real> {
     public Matrix negateElements(){
         for (int i=0;i<getRowCount();i++)
             for (int j=0;j<getColumnCount();j++)
-                this.get(i, j).negate();
+                this.valueAt(i, j).negate();
         return this;
     }
 
@@ -507,7 +520,7 @@ public class Matrix extends GenericMatrix<Real> {
         Vector result = new Vector(this.getRowCount());
         //System.out.println(this.getRows());
         for(int row=0;row<this.getRowCount();row++)
-            result.set(row, this.get(row, col).getPrimitive());
+            result.set(row, this.valueAt(row, col).getPrimitive());
         return result;
     }
     
@@ -522,7 +535,7 @@ public class Matrix extends GenericMatrix<Real> {
         this.assertIndexBound(row , 0);
         Vector result = new Vector(this.getColumnCount());
         for(int col=0;col<this.getColumnCount();col++)
-            result.set(col, this.get(row, col).getPrimitive());
+            result.set(col, this.valueAt(row, col).getPrimitive());
         return result;
     }
     
@@ -602,7 +615,7 @@ public class Matrix extends GenericMatrix<Real> {
             
             // Reduce each diagonal element by the eigenvalue
             for (int j=0;j<temp.getColumnCount();j++)
-                temp.get(j, j).add(eigenValue.getNegative());
+                temp.valueAt(j, j).add(eigenValue.getNegative());
             
             ArrayList<Vector> solutions = temp.solveLinearSystem(null);
             int geometricMultiplicity = solutions.size()-1;
@@ -629,10 +642,10 @@ public class Matrix extends GenericMatrix<Real> {
             for (;col<this.getColumnCount();col++){
                 
                 // in case the element is zero ...
-                if (this.get(core_row, col).isZero()){
+                if (this.valueAt(core_row, col).isZero()){
                     // ... find a non-zero in the same column ...
                     for (int row=col+1; row<this.getRowCount(); row++){
-                        if (!this.get(row, col).isZero()){
+                        if (!this.valueAt(row, col).isZero()){
                             // ... and swap rows
                             this._rowSwap(core_row, row);
                             break;
@@ -641,7 +654,7 @@ public class Matrix extends GenericMatrix<Real> {
                 }
                 
                 // If the non-zero element is found, stop searching
-                if (! this.get(core_row, col).isZero())
+                if (! this.valueAt(core_row, col).isZero())
                     break;
             } 
             
@@ -657,13 +670,13 @@ public class Matrix extends GenericMatrix<Real> {
                     continue;
                 
                 // .. and if the element is 0 ...
-                if (this.get(row, col).isZero())
+                if (this.valueAt(row, col).isZero())
                     continue;
                 
                 // .. perform a row operation to zero that element
                 this._rowOperation(
-                    row, this.get(core_row,col), 
-                    core_row, this.get(row,col).getNegative()
+                    row, this.valueAt(core_row,col), 
+                    core_row, this.valueAt(row,col).getNegative()
                 );
             }
         }
@@ -675,7 +688,7 @@ public class Matrix extends GenericMatrix<Real> {
             
             // ... find the pivot element ...
             for (;col<this.getColumnCount();col++){
-                if (! this.get(row, col).isZero()){
+                if (! this.valueAt(row, col).isZero()){
                     pivot_found=true;
                     break;
                 }
@@ -686,7 +699,7 @@ public class Matrix extends GenericMatrix<Real> {
                 continue;
             
             // ... make the element unity
-            this._rowDivide( row, this.get(row,col).copy() );
+            this._rowDivide( row, this.valueAt(row,col).copy() );
         }
         
         return this;
@@ -706,7 +719,7 @@ public class Matrix extends GenericMatrix<Real> {
      */
     public void _rowDivide(int row, Real divisor){
         for (int col=0; col<this.getColumnCount();col++)
-            this.get(row, col).div(divisor);
+            this.valueAt(row, col).div(divisor);
         if (getAugmented()!=null)
             ((Matrix) getAugmented())._rowDivide(row, divisor);
     }
@@ -722,9 +735,9 @@ public class Matrix extends GenericMatrix<Real> {
         for (int i=0;i<lamda.getRowCount();i++)
             for (int j=0;j<lamda.getColumnCount();j++)
                 if (i==j)
-                    lamda.set(i, j, new Polynomial(this.get(i,j).getPrimitive(),-1.0));
+                    lamda.set(i, j, new Polynomial(this.valueAt(i,j).getPrimitive(),-1.0));
                 else
-                    lamda.set(i, j, new Polynomial(this.get(i,j).getPrimitive(),0.0));
+                    lamda.set(i, j, new Polynomial(this.valueAt(i,j).getPrimitive(),0.0));
         return lamda.det();
     }
     
@@ -803,10 +816,7 @@ public class Matrix extends GenericMatrix<Real> {
     public Matrix standarize(){
         int N = this.getRowCount();
         Matrix std_mat = Matrix.ones(N,1).getProduct(getStdVector().getAsRowMatrix());
-        std_mat.show("std_mat");
-        this.show("Before");
         multiplyElements(std_mat.invertElements());
-        this.show("after");
         return this;
     }
     
@@ -897,6 +907,7 @@ public class Matrix extends GenericMatrix<Real> {
                 result.setColumn(result_idx++, this.getColumn(i));
         return result;
     }
+    
     
     
     /**

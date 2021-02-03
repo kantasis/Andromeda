@@ -15,86 +15,61 @@ import Math.Vector;
  *
  * @author kostis
  */
-public class LinearRegressor {
+public class LinearRegressor extends Classifier{
     
-    private Vector _coefficients;
-    private Real _learningRate;
+    public static final int MAX_ITERATIONS = 1000;
+    public static final Real e = new Real(1e-3);
     
-    public LinearRegressor(int input_count){
-        _coefficients = new Vector(input_count);
-        _learningRate = new Real("0.1");
+    private Matrix _coefficients_mat;
+    private Vector _biases_vec;
+    private Real _learningRate_r;
+    
+    public LinearRegressor(int input_cnt, int output_cnt){
+        _coefficients_mat = new Matrix(input_cnt, output_cnt);
+        _biases_vec = new Vector(output_cnt);
+        _learningRate_r = new Real(0.1);
     }
     
-    public int getInputs(){
-        return _coefficients.getLength();
+    public int getInputCount(){
+        return _coefficients_mat.getRowCount();
     }
     
-    public Real getLearningRate(){
-        return _learningRate.copy();
+    public int getOutputCount(){
+        return _coefficients_mat.getColumnCount();
+    }
+      
+    public Matrix classify(Matrix dataset){
+        return dataset.getProduct(_coefficients_mat).add(_biases_vec);
     }
     
-    public void setLearningRate(Real x){
-        _learningRate = x;
-    }
-    
-    public Vector getCoefficients(){
-        return _coefficients.copy();
-    }
-    
-    public void setCoefficients(Vector x){
-        _coefficients = x;
-    }
+    public Matrix trainEpoch(Matrix dataset, Matrix target){
+        Matrix result_matNL = this.classify(dataset);
+        //target.getSize().show("target");
+        Matrix error_matNL = (Matrix) result_matNL.copy().diff(target);
+        Matrix derivative_matNL = (Matrix) error_matNL.copy().multiply(_learningRate_r);
         
-    public Vector classify(Matrix dataset){
-        Matrix result = dataset.getProduct(getCoefficients());
-        return result.getColumn(0);
+        _biases_vec.diff(derivative_matNL.getAverageVector());
+        _coefficients_mat.diff(dataset.getTransposed().getProduct(derivative_matNL));
+        
+        return error_matNL;
     }
     
-    public Real classify(Vector pattern){
-        return classify((Matrix) pattern).get(0);
+    public void train(Matrix dataset, Matrix target){
+        for(int i=0;i<MAX_ITERATIONS;i++){
+            Matrix error_matNL = this.trainEpoch(dataset, target);
+            Vector errors_vec = error_matNL.getNormVector();
+            
+            boolean abort_flag = true;
+            for (int j=0; j<errors_vec.getLength(); j++){
+                if (errors_vec.get(j).compareTo(e)>0){
+                    abort_flag=false;
+                }
+            }
+            if (abort_flag){
+                Logger.log("returning after %d iterations",i);
+                return;
+            }
+        }
     }
     
-    public void train(Matrix dataset, Vector target){
-        Vector output = this.classify(dataset);
-        Vector signed_error_vector = output.diff(target);
-        Matrix temp = signed_error_vector.getAsColMatrix().getProduct(Matrix.ones(1,this.getInputs()));
-        temp.multiplyElements(dataset);
-        _coefficients.add(temp.getAverageVector().multiply(getLearningRate().getNegative()));
-        signed_error_vector.power(2).sum().show("Error");
-    }
-    
-    public static void main(String[] args){
-        Matrix raw_dataset = new Matrix(new double[][]{
-            {2104,     5,      1,   45  },
-            {1416,     3,      2,   40  },
-            {1534,     3,      2,   130  },
-            //{1534,     3,      2,   30  },
-            {852,      2,      1,   36  }
-        });
-        
-        Vector raw_target = new Vector(new double[]{
-            460,
-            232,
-            315,
-            178
-        });
-        
-        int N=raw_dataset.getRowCount();
-        int M=raw_dataset.getColumnCount();
-        Matrix dataset = raw_dataset.copy();
-        dataset.show("Raw");
-        dataset.ground();
-        dataset.scale();
-        
-        dataset=(Matrix)dataset.getMergeLR(Matrix.ones(N, 1));
-        M++;
-        
-        dataset.show("Preprocessed");
-        
-        LinearRegressor reg = new LinearRegressor(M);
-        
-        for (int i=0;i<3000;i++)
-            reg.train(dataset, raw_target);
-        reg.getCoefficients().show("Coefficients");
-    }
 }

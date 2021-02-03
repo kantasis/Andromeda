@@ -45,7 +45,7 @@ public class SparseMatrix extends Matrix {
         return this;
     }
     
-    public Real get(int i,int j){
+    public Real valueAt(int i,int j){
         int idx = _data.indexOf(new Key(i,j));
         if (idx==-1)
             return getDefaultValue();
@@ -96,7 +96,7 @@ public class SparseMatrix extends Matrix {
         for (Key key : getKeys()){
             int i = key.getI();
             int j = key.getJ();
-            this.get(i, j).add(value);
+            this.valueAt(i, j).add(value);
         }
         _defaultValue.add(value);
         return this;
@@ -106,7 +106,7 @@ public class SparseMatrix extends Matrix {
         for (Key key : getKeys()){
             int i = key.getI();
             int j = key.getJ();
-            this.get(i, j).multiply(value);
+            this.valueAt(i, j).multiply(value);
         }
         _defaultValue.multiply(value);
         return this;
@@ -120,7 +120,7 @@ public class SparseMatrix extends Matrix {
         for (Key key : keys){
             int i = key.getI();
             int j = key.getJ();
-            this.get(i, j).multiply(this_v).add(that.get(i, j).getMultiply(that_v));
+            this.valueAt(i, j).multiply(this_v).add(that.valueAt(i, j).getMultiply(that_v));
         }
         this.getDefaultValue().multiply(this_v).add(that.getDefaultValue().getMultiply(that_v));
         return this;
@@ -174,7 +174,7 @@ public class SparseMatrix extends Matrix {
         Matrix result = new Matrix(this.getRowCount(),this.getColumnCount());
         for(int i=0; i<result.getRowCount();i++)
             for (int j=0;j<result.getColumnCount();j++)
-                result.set(i, j, this.get(i, j));
+                result.set(i, j, this.valueAt(i, j));
         return result;
     }
 

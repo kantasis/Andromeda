@@ -62,7 +62,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
      * @param j column index
      * @return the value of the matrix at row i, column j
      */
-    public T get(int i, int j){
+    public T valueAt(int i, int j){
         assertIndexBound(i,j);
         return (T) _data[i][j];
     }
@@ -90,7 +90,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         GenericMatrix<T> result = new GenericMatrix<T> (this.getRowCount(),this.getColumnCount());
         for (int i=0;i<result.getRowCount();i++)
             for (int j=0;j<result.getColumnCount();j++)
-                result.set(i,j,this.get(i,j).copy());
+                result.set(i,j,this.valueAt(i,j).copy());
         return result;
     }
     
@@ -125,7 +125,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         assertSizeAlignment(that);
         for (int i=0;i<this.getRowCount();i++)
             for (int j=0;j<this.getColumnCount();j++)
-                this.get(i,j).add(that.get(i, j));
+                this.valueAt(i,j).add(that.valueAt(i, j));
         return this;
     } 
     
@@ -133,7 +133,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         assertSizeAlignment(that);
         for (int i=0;i<this.getRowCount();i++)
             for (int j=0;j<this.getColumnCount();j++)
-                this.get(i,j).add(that.get(i, j).getMultiply(-1));
+                this.valueAt(i,j).add(that.valueAt(i, j).getMultiply(-1));
         return this;
     } 
     
@@ -142,7 +142,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
     public GenericMatrix<T> multiply(Real that){
         for (int i=0;i<this.getRowCount();i++)
             for (int j=0;j<this.getColumnCount();j++)
-                this.get(i,j).multiply(that);
+                this.valueAt(i,j).multiply(that);
                 //this.set(i,j,this.get(i,j).add(that.get(i, j)));
         return this;
     } 
@@ -153,11 +153,9 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         for (int i=0;i<result.getRowCount();i++)
             for (int j=0;j<result.getColumnCount();j++){
                 // TODO: this is hideous. Have the Operatable interface have a getZero()
-                T sum = (T) this.get(0,0).getMultiply(0.0);
+                T sum = (T) this.valueAt(0,0).getMultiply(0.0);
                 for (int k=0;k<this.getColumnCount();k++)
-                    sum.add(
-                        this.get(i,k).getProduct(
-                            that.get(k,j)
+                    sum.add(this.valueAt(i,k).getProduct(that.valueAt(k,j)
                         )
                     );
                 result.set(i,j,sum);
@@ -212,7 +210,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         GenericMatrix<T> result = new GenericMatrix<T>(this.getColumnCount(),this.getRowCount());
         for (int i=0;i<result.getRowCount();i++)
             for (int j=0;j<result.getColumnCount();j++)
-                result.set(i, j, this.get(j,i));
+                result.set(i, j, this.valueAt(j,i));
         return result;   
     }
     
@@ -226,7 +224,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         assertSizeAlignment(that);
         for (int i=0;i<getRowCount();i++)
             for (int j=0;j<getColumnCount();j++)
-                if (this.get(i,j).equals(that.get(i, j)))
+                if (this.valueAt(i,j).equals(that.valueAt(i, j)))
                     return false;
         return true;
     }
@@ -255,8 +253,8 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
      */
     public GenericMatrix<T> _rowOperation(int lhs, T l_factor, int rhs, T r_factor){
         for (int i=0;i<this.getColumnCount();i++){
-            T res = this.get(lhs,i).getProduct(l_factor)
-                .add( this.get(rhs,i).getProduct(r_factor) );
+            T res = this.valueAt(lhs,i).getProduct(l_factor)
+                .add(this.valueAt(rhs,i).getProduct(r_factor) );
             /*
             Logger.log("Doing the operation %s = %s * %s + %s * %s",res,
                 this.get(lhs,i),l_factor,
@@ -280,8 +278,8 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
      */
     public GenericMatrix<T> _rowSwap(int a, int b){
         for (int i=0;i<this.getColumnCount();i++){
-            T temp=this.get(a,i);
-            this.set(a,i,this.get(b,i));
+            T temp=this.valueAt(a,i);
+            this.set(a,i,this.valueAt(b,i));
             this.set(b,i,temp);
         }
         if (getAugmented()!=null)
@@ -300,11 +298,11 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         for (int row=0; row<this.getRowCount();row++){
             int col=0;
             //
-            while (this.get(row,col).isZero()){
+            while (this.valueAt(row,col).isZero()){
                 boolean found=false;
                 //
                 for (int row2=row+1;row2<this.getRowCount();row2++){
-                    if (!this.get(row2,col).isZero()){
+                    if (!this.valueAt(row2,col).isZero()){
                         this._rowSwap(row, row2);
                         found=true;
                         break;
@@ -317,9 +315,8 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
                     return this;
             }
             for (int i=row+1;i<this.getRowCount();i++)
-                this._rowOperation(
-                    i, this.get(row,col), 
-                    row, (T) this.get(i,col).getMultiply(-1.0)
+                this._rowOperation(i, this.valueAt(row,col), 
+                    row, (T) this.valueAt(i,col).getMultiply(-1.0)
                 );
         }
         return this;
@@ -335,10 +332,10 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
     public GenericMatrix<T> _ltrig(){
         for (int row=this.getRowCount()-1; row>=0;row--){
             int col=this.getRowCount()-1;
-            while (this.get(row,col).isZero()){
+            while (this.valueAt(row,col).isZero()){
                 boolean found=false;
                 for (int row2=row-1;row2>=0;row2--){
-                    if (!this.get(row2,col).isZero()){
+                    if (!this.valueAt(row2,col).isZero()){
                         this._rowSwap(row, row2);
                         found=true;
                         break;
@@ -352,9 +349,8 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
             }
             //this._rowOperation(row, 1f/this.get(row,col), row, 0f);
             for (int i=row-1;i>=0;i--)
-                this._rowOperation(
-                    i, this.get(row,col), 
-                    row, (T) this.get(i,col).getMultiply(-1.0)
+                this._rowOperation(i, this.valueAt(row,col), 
+                    row, (T) this.valueAt(i,col).getMultiply(-1.0)
                 );
         }
         return this;
@@ -381,7 +377,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
             for (int j=0;j<result.getColumnCount();j++){
                 if (k==y)
                     k++;
-                result.set(i, j, this.get(o,k));
+                result.set(i, j, this.valueAt(o,k));
                 k++;
             }
             o++;
@@ -398,16 +394,15 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         assert this.getColumnCount()==this.getRowCount() : String.format("Undefined det for non-square matrix (%d %d)",getRowCount(),getColumnCount());
         
         if (this.getColumnCount()==1)
-            return this.get(0,0).copy();
+            return this.valueAt(0,0).copy();
         
-        T result = (T) this.get(0, 0).getMultiply(0.0);
+        T result = (T) this.valueAt(0, 0).getMultiply(0.0);
         double sign=1;
         for (int i=0;i<this.getRowCount();i++){
-            result.add(
-                this.adjunct(i,0)
+            result.add(this.adjunct(i,0)
                 .det()
                 .multiply(sign)
-                .getProduct(this.get(i,0)));
+                .getProduct(this.valueAt(i,0)));
             sign*=-1;
         }
         return result;
@@ -416,9 +411,9 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
     public boolean isUnit(){
         for (int i=0;i<this.getRowCount();i++)
             for (int j=0;j<this.getColumnCount();j++)
-                if (i==j && !this.get(i,j).isUnit())
+                if (i==j && !this.valueAt(i,j).isUnit())
                     return false;
-                else if (i!=j && !this.get(i,j).isZero())
+                else if (i!=j && !this.valueAt(i,j).isZero())
                     return false;
         return true;        
     }
@@ -426,7 +421,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
     public boolean isZero(){
         for (int i=0;i<this.getRowCount();i++)
             for (int j=0;j<this.getColumnCount();j++)
-                if (!this.get(i,j).isZero())
+                if (!this.valueAt(i,j).isZero())
                     return false;
         return true;
     }
@@ -442,7 +437,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         for (int i=0;i<getRowCount();i++){
             str="";
             for (int j=0;j<getColumnCount();j++)
-                str+=String.format("%s ",get(i,j)!=null?get(i,j).toString():"Null");
+                str+=String.format("%s ",valueAt(i,j)!=null?valueAt(i,j).toString():"Null");
             Logger.log(str);
         }
     }
@@ -502,15 +497,15 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         
         // Elements below
         for (int i=row+1;i<this.getRowCount();i++)
-            if (!get(i,col).isZero())
+            if (!valueAt(i,col).isZero())
                 return false;
         
         // Elements to the left
         for(int j=col-1;j>=0;j--)
-            if (!get(row,j).isZero())
+            if (!valueAt(row,j).isZero())
                 return false;
         
-        return !get(row,col).isZero();
+        return !valueAt(row,col).isZero();
     }
     
     public static void main(String...args){
@@ -560,8 +555,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         for (int i=0;i<this.getRowCount();i++)
             for (int j=0;j<this.getColumnCount();j++)
                 this.set(i, j, 
-                    this.get(i,j).getProduct(
-                        that.get(i, j)
+                    this.valueAt(i,j).getProduct(that.valueAt(i, j)
                     )
                 );
         return this;
@@ -577,8 +571,7 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         assertSizeAlignment(that);
         for (int i=0;i<this.getRowCount();i++)
             for (int j=0;j<this.getColumnCount();j++)
-                this.get(i, j).add(
-                    that.get(i, j)
+                this.valueAt(i, j).add(that.valueAt(i, j)
                 );
         return this;
     }
@@ -589,9 +582,9 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
         GenericMatrix result = new Matrix(this.getRowCount(),this.getColumnCount()+that.getColumnCount());
         for (int i=0;i<result.getRowCount();i++){
             for (int j=0;j<this.getColumnCount();j++)
-                result.set(i, j, this.get(i,j));
+                result.set(i, j, this.valueAt(i,j));
             for (int j=0;j<that.getColumnCount();j++)
-                result.set(i,this.getColumnCount()+j, that.get(i,j));
+                result.set(i,this.getColumnCount()+j, that.valueAt(i,j));
         }
         return result;
     }

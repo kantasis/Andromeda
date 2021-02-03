@@ -17,7 +17,7 @@ public abstract class ActivationFunctions implements ActivationFunction{
         Matrix result = new Matrix(x.getRowCount(),x.getColumnCount());
         for (int i=0;i<result.getRowCount();i++)
             for (int j=0;j<result.getColumnCount();j++)
-                result.set(i,j, this.evaluate(x.get(i,j)));
+                result.set(i,j, this.evaluate(x.valueAt(i,j)));
         return result;
     }
     
@@ -25,7 +25,7 @@ public abstract class ActivationFunctions implements ActivationFunction{
         Matrix result = new Matrix(x.getRowCount(),x.getColumnCount());
         for (int i=0;i<result.getRowCount();i++)
             for (int j=0;j<result.getColumnCount();j++)
-                result.set(i,j, this.derivative(x.get(i,j)));
+                result.set(i,j, this.derivative(x.valueAt(i,j)));
         return result;    
     }
     
@@ -33,7 +33,7 @@ public abstract class ActivationFunctions implements ActivationFunction{
         Matrix result = new Matrix(x.getRowCount(),x.getColumnCount());
         for (int i=0;i<result.getRowCount();i++)
             for (int j=0;j<result.getColumnCount();j++)
-            result.set(i,j, this.fastDerivative(x.get(i,j)));
+            result.set(i,j, this.fastDerivative(x.valueAt(i,j)));
         return result;    
     }
     

@@ -125,7 +125,7 @@ public class Vector extends Matrix  {
      * @return the value of the vector at index i
      */    
     public Real get(int i){
-        return get(i,0);
+        return valueAt(i,0);
     }
 
     /**
@@ -207,9 +207,9 @@ public class Vector extends Matrix  {
     }
     
     /**
-     * Calculate the sum of all the elements in the vector
+     * Calculate the product of all the elements in the vector
      * 
-     * @return the element-wise sum of the vector
+     * @return the element-wise product of the vector
      */
     public Real product(){
         Real result=this.getRowProduct().get(0);
@@ -567,6 +567,20 @@ public class Vector extends Matrix  {
     public Polynomial toPolynomial(){
         assert getLength()>1 : String.format("Can't convert vector to polynomial ...");
         return new Polynomial(this.getPrimitiveWeights());
+    }
+    
+    /**
+     * Returns a vector with random values from 0 to 1
+     * 
+     * @param n the resulting matrix rows
+     * @return a matrix with random values 0-1
+     */
+    public static Matrix random(int n){
+        Vector result = new Vector(n);
+        Random rnd = new Random();
+        for (int i=0;i<result.getLength();i++)
+            result.set(i, rnd.nextDouble());
+        return result;
     }
         
     public static void main(String[] args){
