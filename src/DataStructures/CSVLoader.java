@@ -91,18 +91,21 @@ public class CSVLoader {
     }
     
     public static Matrix[] splitInputOutput(Matrix dataset, int...outputColumns){
-        boolean[] input_idxLst = new boolean[dataset.getColumnCount()];
-        boolean[] output_idxLst = new boolean[dataset.getColumnCount()];
+        boolean[] input_mask = new boolean[dataset.getColumnCount()];
+        boolean[] output_mask = new boolean[dataset.getColumnCount()];
         
-        for (int outCol_idx=0; outCol_idx<outputColumns.length; outCol_idx++){
-            for (int currCol_idx=0; currCol_idx<dataset.getColumnCount(); currCol_idx++){
-                output_idxLst[currCol_idx] = currCol_idx == outputColumns[outCol_idx];
-                input_idxLst[currCol_idx] = ! output_idxLst[currCol_idx];
-            }
+        for (int outCol_idx=0; outCol_idx<output_mask.length; outCol_idx++){
+            output_mask[outCol_idx] = false;
+            input_mask[outCol_idx] = true;
         }
         
-        Matrix output_mat = dataset.pickColumns(output_idxLst);
-        Matrix input_mat = dataset.pickColumns(input_idxLst);
+        for (int outCol_idx : outputColumns){
+            output_mask[outCol_idx] = true;
+            input_mask[outCol_idx] = false;
+        }
+        
+        Matrix output_mat = dataset.pickColumns(output_mask);
+        Matrix input_mat = dataset.pickColumns(input_mask);
         
         return new Matrix[]{input_mat, output_mat};
     }

@@ -575,7 +575,7 @@ public class Vector extends Matrix  {
      * @param n the resulting matrix rows
      * @return a matrix with random values 0-1
      */
-    public static Matrix random(int n){
+    public static Vector random(int n){
         Vector result = new Vector(n);
         Random rnd = new Random();
         for (int i=0;i<result.getLength();i++)

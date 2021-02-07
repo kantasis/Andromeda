@@ -4,6 +4,7 @@ package Core;
 import static Core.NLP.*;
 import MachineLearning.NeuronLayer;
 import MachineLearning.RNNLayer;
+import Math.Matrix;
 import Math.Operatables.Real;
 import Math.Vector;
 import java.io.BufferedReader;
@@ -18,8 +19,9 @@ public class Main {
     public static final int STOP = CharFeatureExtractor.STOP;
     
     public static void main(String[] args){
+
         
-        Core.Tests.linearRegressorTest();
+        Core.Tests.logisticRegressorTest();
         
         /*
         for (char c='a';c<='z';c++){

@@ -180,6 +180,7 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     }
     
     public Real getLn(){
+        assert this.getPrimitive()>0 : String.format("Error: trying log of negative %f",this.getPrimitive()); 
         return new Real(Math.log(this.getPrimitive()));
     }
     
@@ -260,8 +261,9 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
         return multiply(that);
     }
     
-    public Real round(){
-        return round(getMathContext());
+    public Real getRound(){
+        //return round(getMathContext());
+        return new Real(Math.round(this.getPrimitive()));
     }
 
     public Real round(MathContext mc){

@@ -471,7 +471,7 @@ public class Matrix extends GenericMatrix<Real> {
     }
     
     /**
-     * Create raise all elements to the power
+     * Raise all elements to the power
      * 
      * @param exponent the exponent to be raised to
      * @return this
@@ -483,6 +483,41 @@ public class Matrix extends GenericMatrix<Real> {
         return this;
     }
     
+    /**
+     * Exponentiate all elements
+     * @return this
+     */
+    public Matrix exp(){
+        for (int i=0;i<this.getRowCount();i++)
+            for (int j=0;j<this.getColumnCount();j++)
+                this.set(i, j, this.valueAt(i, j).getExp());
+        return this;
+    }
+
+    /**
+     * Log all elements
+     * @return this
+     */
+    public Matrix log(){
+        for (int i=0;i<this.getRowCount();i++)
+            for (int j=0;j<this.getColumnCount();j++){
+                Real value = this.valueAt(i, j).getLn();
+                this.set(i, j, value);
+            }
+        return this;
+    }    
+
+    /**
+     * Log all elements
+     * @return this
+     */
+    public Matrix round(){
+        for (int i=0;i<this.getRowCount();i++)
+            for (int j=0;j<this.getColumnCount();j++){
+                this.set(i, j, this.valueAt(i, j).getRound());
+            }
+        return this;
+    }    
 
     /**
      * Replace all elements with their inverse value
