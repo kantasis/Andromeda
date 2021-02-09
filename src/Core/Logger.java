@@ -26,22 +26,20 @@ public class Logger {
     
   
     /**
-     * 
      * Poduces a log in stdout
-     * @param ll loglevel
+     * @param loglevel loglevel
      * @param str The format string
      * @param x The list of objects
      */
-    public static void log(int ll, String str, Object... x){
-        if (getLogLevel()>ll)
+    public static void log(int loglevel, String str, Object... x){
+        if (getLogLevel()>loglevel)
             return;
-        System.out.printf("<%s %s > %s",nowString(),LL_NAMES[ll],getTabs());
+        System.out.printf("<%s %s > %s",nowString(),LL_NAMES[loglevel],getTabs());
         System.out.printf(str+"\n",x);
     }
    
     /**
-     * 
-     * Poduces a log in stdout unsing the defaule loglevel
+     * Poduces a log in stdout unsing the default loglevel
      * @param str The format string
      * @param x The list of objects
      */
@@ -50,7 +48,6 @@ public class Logger {
     }
    
     /**
-     * 
      * Poduces a log in stdout unsing the defaule loglevel
      * @param str The format string
      */
@@ -94,7 +91,6 @@ public class Logger {
     }
    
     /**
-     * 
      * @return the loglevel of the Logger
      */
     public static int getLogLevel(){
@@ -125,7 +121,6 @@ public class Logger {
        _loglevel_default=x;
     }
     
-    
     public static int unitTest(){
         Logger.log("This is the first log %s",new Double(6));
         Logger.indent();
@@ -133,6 +128,7 @@ public class Logger {
         Logger.log("This is the first log");
         return 0;
     }
+    
     public static void main(String[] args){
         unitTest();
     }
