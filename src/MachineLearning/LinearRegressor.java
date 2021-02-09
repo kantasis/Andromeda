@@ -24,24 +24,48 @@ public class LinearRegressor extends Classifier{
     private Vector _biases_vec1L;
     private Real _learningRate_r;
     
+    /**
+     * Constructor
+     * @param input_cnt number of input features
+     * @param output_cnt number of hypotheses
+     */
     public LinearRegressor(int input_cnt, int output_cnt){
         _coefficients_matML = Matrix.random(input_cnt, output_cnt);
         _biases_vec1L = Vector.random(output_cnt);
         _learningRate_r = new Real(0.1);
     }
     
+    /**
+     * Get the number of input features
+     * @return an int expressing the feature count
+     */
     public int getInputCount(){
         return _coefficients_matML.getRowCount();
     }
     
+    /**
+     * Get the number of outputs
+     * @return an int expressing the hypothes count
+     */
     public int getOutputCount(){
         return _coefficients_matML.getColumnCount();
     }
-      
-    public Matrix classify(Matrix dataset){
-        return dataset.getProduct(_coefficients_matML).add(_biases_vec1L);
+
+    /**
+     * Classify the input into an output hypothesis
+     * @param x_mat
+     * @return the output hypothesis
+     */
+    public Matrix classify(Matrix x_mat){
+        return x_mat.getProduct(_coefficients_matML).add(_biases_vec1L);
     }
-        
+
+    /**
+     * Perform one training pass of the classifier using input and target data
+     * @param x_matNM the input data matrix
+     * @param y_matNL the target data matrix
+     * @return the error matrix
+     */
     public Matrix trainEpoch(Matrix x_matNM, Matrix y_matNL){
         Matrix h_matNL = this.classify(x_matNM);
         
@@ -55,6 +79,12 @@ public class LinearRegressor extends Classifier{
         return error_matNL;
     }
     
+    /**
+     * Perform successive training passes (trainEpoch()) until either the error
+     * is less than 'e' or less than MAX_ITERATIONS
+     * @param dataset
+     * @param target 
+     */
     public void train(Matrix dataset, Matrix target){
         int i;
         Vector errors_vec = null;
@@ -76,6 +106,10 @@ public class LinearRegressor extends Classifier{
         Logger.log("returning after %d iterations, e=%s",i, errors_vec);
     }
     
+    /**
+     * Show the information about this classifier
+     * @param name the name to be displayed at the console
+     */
     public void show(String name){
         _coefficients_matML.show("Coefficients of "+name);
         _biases_vec1L.show("Biases of "+name);
