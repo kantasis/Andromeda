@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package Math.Operatables;
 
 import Core.Logger;
@@ -10,10 +5,6 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 
-/**
- *
- * @author kostis
- */
 public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     
     public static final int MAX_NEWTON_ITERATIONS=3000;
@@ -23,8 +14,6 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     private MathContext _mc;
     public static final MathContext DEFAULT_MATHCONTEXT = new MathContext(PRECISSION,RoundingMode.HALF_EVEN);
 
-    
-    
     public Real(BigDecimal x){
         // you can share the same object because it is immutable and 
         // copying is not required
@@ -53,8 +42,6 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
         else
             _mc=x;
         this.set(this._get().round(_mc));
-        //this.show("After rounding");
-        //Logger.log("we've set the mathcontext to %d",_mc.getPrecision());
         return this;
     }
     
@@ -166,12 +153,10 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
     }
     
     public Real power(int exponent){
-        // TODO: Check the testcase new Real(-1).power(0.5)
         return set(_get().pow(exponent));
     }
 
     public Real getPower(int exponent){
-        // TODO: Check the testcase new Real(-1).power(0.5)
         return copy().power(exponent);
     }
     

@@ -20,8 +20,7 @@ public class Main {
     
     public static void main(String[] args){
 
-        
-        Core.Tests.logisticRegressorTest();
+        Core.Tests.kmeansTest();
         
         /*
         for (char c='a';c<='z';c++){

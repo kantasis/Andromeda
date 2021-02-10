@@ -1,8 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package MachineLearning;
 
 import Core.Logger;
@@ -11,23 +6,19 @@ import Math.Operatables.Real;
 import Math.Vector;
 import java.util.Random;
 
-/**
- *
- * @author kostis
- */
 public class KMeansClusterer {
     
     private Matrix _centroids;
     public static int MAX_ITERATIONS=300;
-        
-    public KMeansClusterer(Matrix init){
-        _centroids = init;
+
+    public KMeansClusterer(Matrix centroids){
+        _centroids = centroids;
     }
 
     public KMeansClusterer(int k, int m){
         _centroids = Matrix.random(k, m);
     }
-    
+
     public KMeansClusterer(int k, Matrix dataset){
         this(k,dataset.getRowCount());
         Random rnd = new Random();
@@ -36,7 +27,7 @@ public class KMeansClusterer {
             classes[i]=rnd.nextInt(k);
         _updateCentroids(dataset, classes);
     }
-    
+
     public int getK(){
         return _centroids.getRowCount();
     }

@@ -1,13 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package Core;
 
 import DataStructures.CSVLoader;
 import MachineLearning.Classifier;
+import MachineLearning.KMeansClusterer;
 import MachineLearning.LinearRegressor;
 import MachineLearning.LogisticRegressor;
 import Math.Matrix;
@@ -202,6 +197,31 @@ public class Tests {
         Classifier.R2(target_mat.getColumn(0), z_mat.getColumn(0)).show("R2 coeff");
         model.getMeanSquaredError(dataset_mat, target_mat).show("MSE");
         model.show("model");
+        
+    }
+   
+    public static void kmeansTest(){
+        String filename = "C:\\Users\\kostis\\Dropbox\\iris.vec.csv";
+        Matrix dataset = CSVLoader.readCSV(filename,",",true);
+        
+        int N = dataset.getRowCount();
+        Matrix[] dataset_tmp = CSVLoader.splitInputOutput(dataset,4,5,6);
+        Matrix x_mat = dataset_tmp[0];
+        Matrix y_mat = dataset_tmp[1];
+        int M = x_mat.getColumnCount();
+        int L=3;
+        int k=3;
+
+        // Preprocess
+        x_mat.center().standarize();
+        y_mat.ground().scale();
+        
+        KMeansClusterer model = new KMeansClusterer(k,M);
+        model.cluster(x_mat);
+        
+        model.show("Pre");
+        model.cluster(x_mat);
+        model.show("Post");
         
     }
 
