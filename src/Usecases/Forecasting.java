@@ -6,7 +6,7 @@
 package Usecases;
 
 import Math.Vector;
-import MachineLearning.MultilayerNetwork;
+import MachineLearning.NeuralNetworks.MultilayerNetwork;
 import java.util.ArrayList;
 import static DataStructures.CSVLoader.readTextFile;
 

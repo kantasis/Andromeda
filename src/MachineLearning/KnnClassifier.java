@@ -11,13 +11,13 @@ public class KnnClassifier {
     private Integer[] _originalClasses_L;
     private int _k;
     
-    public KnnClassifier(Matrix originalDataset, Integer[] classes, int k){
-        assert originalDataset.getRowCount()==classes.length: 
+    public KnnClassifier(Matrix dataset_mat, Integer[] labels_intLst, int k){
+        assert dataset_mat.getRowCount()==labels_intLst.length: 
             String.format("originalDataset(%d) and classes(%d) do not have the same dimensions",
-            originalDataset.getRowCount(), classes.length);
+            dataset_mat.getRowCount(), labels_intLst.length);
         
-        _originalDataset_LxM = originalDataset;
-        _originalClasses_L = classes;
+        _originalDataset_LxM = dataset_mat;
+        _originalClasses_L = labels_intLst;
         _k=k;
     }
     

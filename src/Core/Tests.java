@@ -3,6 +3,7 @@ package Core;
 import DataStructures.CSVLoader;
 import MachineLearning.Classifier;
 import MachineLearning.KMeansClusterer;
+import MachineLearning.KnnClassifier;
 import MachineLearning.LinearRegressor;
 import MachineLearning.LogisticRegressor;
 import Math.Matrix;
@@ -220,9 +221,44 @@ public class Tests {
         model.cluster(x_mat);
         
         model.show("Pre");
-        model.cluster(x_mat);
+        Integer[] labels_intLstN = model.cluster(x_mat);
         model.show("Post");
         
+        Vector labels_vec = new Vector(labels_intLstN);
+        for (int label : labels_intLstN)
+            Logger.log("label: "+label);
+    }
+    
+    public static void knnTest(){
+        String filename = "C:\\Users\\kostis\\Dropbox\\iris.vec.csv";
+        Matrix dataset = CSVLoader.readCSV(filename,",",true);
+        
+        int N = dataset.getRowCount();
+        Matrix[] dataset_tmp = CSVLoader.splitInputOutput(dataset,4,5,6);
+        Matrix x_mat = dataset_tmp[0];
+        Matrix y_mat = dataset_tmp[1];
+        int M = x_mat.getColumnCount();
+        int L=3;
+        int k=3;
+
+        // Preprocess
+        x_mat.center().standarize();
+        y_mat.ground().scale();
+        
+        KMeansClusterer model = new KMeansClusterer(k,M);
+        model.cluster(x_mat);
+        
+        model.show("Pre");
+        Integer[] labels_intLstN = model.cluster(x_mat);
+        model.show("Post");
+        
+    
+        KnnClassifier model2 = new KnnClassifier(x_mat,labels_intLstN, 5);
+        Integer[] labels2_intLstN = model2.classify(x_mat);
+
+        for (int label : labels2_intLstN)
+            Logger.log("label: "+label);
+
     }
 
 }

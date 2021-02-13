@@ -2,8 +2,8 @@ package Core;
 
 
 import static Core.NLP.*;
-import MachineLearning.NeuronLayer;
-import MachineLearning.RNNLayer;
+import MachineLearning.NeuralNetworks.NeuronLayer;
+import MachineLearning.NeuralNetworks.RNNLayer;
 import Math.Matrix;
 import Math.Operatables.Real;
 import Math.Vector;
@@ -20,7 +20,7 @@ public class Main {
     
     public static void main(String[] args){
 
-        Core.Tests.kmeansTest();
+        Core.Tests.knnTest();
         
         /*
         for (char c='a';c<='z';c++){

@@ -5,7 +5,7 @@
  */
 package Usecases;
 
-import MachineLearning.MultilayerNetwork;
+import MachineLearning.NeuralNetworks.MultilayerNetwork;
 import Math.Vector;
 import java.util.ArrayList;
 import java.util.Random;

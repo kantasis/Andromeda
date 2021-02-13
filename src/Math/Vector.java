@@ -43,10 +43,20 @@ public class Vector extends Matrix  {
     /**
      * Vector constructor given an array of doubles.
      * Creates a new Vector instance with the elements of the given array
-     * 
      * @param x the array of the elements in the vector
      */
     public Vector(double...x){
+        this(x.length);
+        for (int i=0;i<this.getLength();i++)
+            this.set(i, x[i]);
+    }
+    
+    /**
+     * Vector constructor given an array of integers.
+     * Creates a new Vector instance with the elements of the given array
+     * @param x the array of the elements in the vector
+     */
+    public Vector(Integer...x){
         this(x.length);
         for (int i=0;i<this.getLength();i++)
             this.set(i, x[i]);

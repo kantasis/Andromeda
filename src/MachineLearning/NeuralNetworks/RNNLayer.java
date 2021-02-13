@@ -1,4 +1,4 @@
-package MachineLearning;
+package MachineLearning.NeuralNetworks;
 
 import Core.NLP;
 import Graphics.Figure;

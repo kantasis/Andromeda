@@ -3,9 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package MachineLearning;
+package MachineLearning.NeuralNetworks;
 
 import Core.Logger;
+import MachineLearning.ActivationFunction;
+import MachineLearning.ActivationFunctions;
 import Math.Vector;
 import Math.Matrix;
 import Math.Operatables.Real;

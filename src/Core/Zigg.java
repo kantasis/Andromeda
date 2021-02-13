@@ -5,7 +5,7 @@
  */
 package Core;
 
-import MachineLearning.MultilayerNetwork;
+import MachineLearning.NeuralNetworks.MultilayerNetwork;
 import Math.Vector;
 import Graphics.Renderable;
 import java.awt.Graphics2D;

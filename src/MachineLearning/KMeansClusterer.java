@@ -86,22 +86,23 @@ public class KMeansClusterer {
         }
     }
     
-    public Integer[] cluster(Matrix dataset){
-        assertFeatureAlignment(dataset);
+    public Integer[] cluster(Matrix dataset_matNM){
+        assertFeatureAlignment(dataset_matNM);
         Real e;
         int iteration_counter = 0;
-        Integer[] classes;
+        Integer[] labels_intLstN;
         do{
             Matrix temp = _centroids.copy();
-            classes = classify(dataset);
-            _updateCentroids(dataset,classes);
+            labels_intLstN = classify(dataset_matNM);
+            _updateCentroids(dataset_matNM,labels_intLstN);
             temp.diff(_centroids);
             e = temp.getNormVector().getNorm();
             iteration_counter++;
             if (iteration_counter > MAX_ITERATIONS)
                 break;
         }while ( !e.isZero() );
-        return classes;
+        Logger.log("Exited Kmeans after %d iterations with e= %s",iteration_counter,e);
+        return labels_intLstN;
     }
     
     public void show(String str){

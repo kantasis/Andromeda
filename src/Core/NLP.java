@@ -6,8 +6,8 @@
 package Core;
 
 import Graphics.Figure;
-import MachineLearning.NeuronLayer;
-import MachineLearning.RNNLayer;
+import MachineLearning.NeuralNetworks.NeuronLayer;
+import MachineLearning.NeuralNetworks.RNNLayer;
 import Math.Operatables.Real;
 import Math.Vector;
 import java.io.BufferedReader;

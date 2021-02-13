@@ -1,4 +1,4 @@
-package MachineLearning;
+package MachineLearning.NeuralNetworks;
 
 import Core.Logger;
 import Math.Vector;
