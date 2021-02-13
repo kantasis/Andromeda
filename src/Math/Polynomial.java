@@ -177,10 +177,9 @@ public class Polynomial extends OperatableAdapter<Polynomial> {
         return getNeutonRoot(estimate);
     }
     
-    public Real getNeutonRoot(Real r){
-
+    public Real getNeutonRoot(Real originalEstimate_r){
         Polynomial derivative = getDerivative();
-        Real estimate=r.copy();
+        Real estimate=originalEstimate_r.copy();
         Real previous;
         Real f = evaluate(estimate);
         Real f_;
@@ -196,7 +195,8 @@ public class Polynomial extends OperatableAdapter<Polynomial> {
             previous=estimate.copy();
             estimate.minus(f.copy().div(f_));   // estimate-=f/f_
             if (maxIterations--<=0){
-                return null;
+                Logger.log(Logger.LL_WARNING, "Passed Max Iterations in getNeutonRoot (Diff = %s)",f);
+                break;
             }
             f = evaluate(estimate);
         }
