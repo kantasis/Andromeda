@@ -298,6 +298,7 @@ public class Vector extends Matrix  {
      * @return this
      */
     public Vector add(Vector that){
+        this.assertSizeAlignment(that);
         for (int i=0;i<getLength();i++)
             this.get(i).add(that.get(i));
         return this;

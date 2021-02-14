@@ -776,6 +776,10 @@ public class Matrix extends GenericMatrix<Real> {
         return lamda.det();
     }
     
+    /**
+     * Calculate the roots of the characteristic polynomial
+     * @return a vector of the eigenvalues
+     */
     public Vector getEigenvalues(){
         return getCharacteristicPolynomial().getRoots();
     }
