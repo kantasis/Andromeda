@@ -1,13 +1,9 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package MachineLearning;
 
 import Core.Logger;
 import Math.Matrix;
+import Math.Operatables.Real;
 import Math.Vector;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,7 +22,6 @@ public class LabelArray {
      * @param labels the list of strings
      */
     public LabelArray(List labels){
-        
         int N = labels.size();
         
         // Get the distinct label keys
@@ -163,6 +158,24 @@ public class LabelArray {
         return result_matNL;
     }
     
+    /**
+     * Calculate the entropy of the label distribution
+     * @return the calculated entropy
+     */
+    public Real getEntropy(){
+        Real result = new Real(0);
+        int[] class_cnt = new int[getL()];
+        for (int i=0;i<getL();i++)
+            class_cnt[i]=0;
+        for (int i=0;i<getN();i++)
+            class_cnt[getLabel(i)]++;
+        for (int i=0;i<getL();i++){
+            Real p = new Real((double)class_cnt[i]/getN());
+            result.add(p.getLog2().multiply(p));
+        }
+        return result.negate();
+    }
+    
     /* TODO:
     Matrix getLabelMatrix()
         returns the one-hot (0-1) encoded NxL matrix of the labels
@@ -185,12 +198,12 @@ public class LabelArray {
         ArrayList<String> labels_arrList = new ArrayList <String>(Arrays.asList(labels_strArr));
         
         //LabelArray labelArray = new LabelArray(labels_arrList);
-        Integer[] temp = {1,1,2,1,1,11,2,1,4,1,4,5};
+        Integer[] temp = {1,2};
         LabelArray labelArray = new LabelArray(temp);
         
         labelArray.show("Test LabelArray");
         labelArray.toOneHotMatrix().show("LabelArray Matrix");
-        
+        labelArray.getEntropy().show("Entropy");
         
     }
     

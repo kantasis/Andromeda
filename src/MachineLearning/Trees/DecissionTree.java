@@ -9,4 +9,8 @@ package MachineLearning.Trees;
 
 public class DecissionTree {
 
+    public static getGiniCoeff(boolean[] classes){
+        
+    }
+    
 }

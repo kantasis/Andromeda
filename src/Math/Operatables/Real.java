@@ -168,6 +168,11 @@ public class Real extends OperatableAdapter<Real> implements Comparable<Real>{
         assert this.getPrimitive()>0 : String.format("Error: trying log of negative %f",this.getPrimitive()); 
         return new Real(Math.log(this.getPrimitive()));
     }
+   
+    public Real getLog2(){
+        assert this.getPrimitive()>0 : String.format("Error: trying log of negative %f",this.getPrimitive()); 
+        return new Real(Math.log(this.getPrimitive())/Math.log(2));
+    }
     
     public Real sqr(){
         return this.multiply(this);
