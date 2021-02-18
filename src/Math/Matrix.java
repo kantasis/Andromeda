@@ -459,15 +459,10 @@ public class Matrix extends GenericMatrix<Real> {
     
     /**
      * Create a copy of this matrix.
-     * 
      * @return a new matrix that is a copy of this one
      */
     public Matrix copy(){
-        Matrix result = new Matrix (this.getRowCount(),this.getColumnCount());
-        for (int i=0;i<result.getRowCount();i++)
-            for (int j=0;j<result.getColumnCount();j++)
-                result.set(i,j,this.valueAt(i,j).copy());
-        return result;
+        return (Matrix) super.copy();
     }
     
     /**
@@ -946,8 +941,6 @@ public class Matrix extends GenericMatrix<Real> {
                 result.setColumn(result_idx++, this.getColumn(i));
         return result;
     }
-    
-    
     
     /**
      * The main executable function.

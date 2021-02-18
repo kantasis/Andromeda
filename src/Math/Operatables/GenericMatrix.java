@@ -83,7 +83,6 @@ public class GenericMatrix < T extends OperatableAdapter<T> >
     
     /**
      * Create a copy of this matrix.
-     * 
      * @return a new matrix that is a copy of this one
      */
     public GenericMatrix<T> copy(){

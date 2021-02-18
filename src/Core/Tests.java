@@ -6,6 +6,7 @@ import MachineLearning.KMeansClusterer;
 import MachineLearning.KnnClassifier;
 import MachineLearning.LinearRegressor;
 import MachineLearning.LogisticRegressor;
+import MachineLearning.Trees.DecissionTree;
 import Math.Matrix;
 import Math.Vector;
 import java.util.ArrayList;
@@ -285,7 +286,7 @@ public class Tests {
     
     public static void main(String[] args){
 
-        pcaTest();
+        DecissionTree.main(args);
     
     }
 

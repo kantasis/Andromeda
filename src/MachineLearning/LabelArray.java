@@ -58,8 +58,8 @@ public class LabelArray {
             Logger.log("  "+label.toString());
 
         Logger.log("Labels:");
-        for(int i=0;i<_labels_intLstN.length;i++)
-            Logger.log("  %d) %d",i,_labels_intLstN[i]);
+        for(int i=0;i<this.getN();i++)
+            Logger.log("  %d) %d",i,getLabel(i));
         Logger.dedent();
     }
     
@@ -158,23 +158,71 @@ public class LabelArray {
         return result_matNL;
     }
     
+    private Integer[] _class_cnt;
+    /**
+     * Calculates the number of items in a class
+     * Makes use of caching
+     * @param idx the class index to be counted
+     * @return the count of the class
+     */
+    public Integer getClassCount(int idx){
+        if (_class_cnt==null){
+            _class_cnt = new Integer[getL()];
+            for (int i=0;i<getL();i++)
+                _class_cnt[i]=0;
+            for (int i=0;i<getN();i++)
+                _class_cnt[getLabel(i)]++;
+        }
+        return _class_cnt[idx];
+    }
+        
     /**
      * Calculate the entropy of the label distribution
      * @return the calculated entropy
      */
     public Real getEntropy(){
+        /*
+        String temp="";
+        for (int label_idx:_labels_intLstN)
+            temp+=String.format("%s ", this.getLabelObject(label_idx));
+        */
+            
         Real result = new Real(0);
-        int[] class_cnt = new int[getL()];
-        for (int i=0;i<getL();i++)
-            class_cnt[i]=0;
-        for (int i=0;i<getN();i++)
-            class_cnt[getLabel(i)]++;
         for (int i=0;i<getL();i++){
-            Real p = new Real((double)class_cnt[i]/getN());
+            Real p = new Real((double)getClassCount(i)/getN());
             result.add(p.getLog2().multiply(p));
         }
+        //Logger.log("Entropy of set %s: %s",temp, result);
         return result.negate();
     }
+    
+    /**
+     * Calculate the Gini Impurity of this set of labels
+     * @return the Gini Impurity as a Real
+     */
+    public Real getGiniImpurity(){
+        Real result = new Real(1);
+        for (int i=0;i<getL();i++){
+            Real p = new Real((double)getClassCount(i)/getN());
+            result.diff(p.power(2));
+        }
+        return result;
+    }
+    
+    /**
+     * Create a new LabelArray with only the rows specified by the indices argument
+     * 
+     * @param indices the indices of this LabelArray to be copied to the output LabelArray
+     * @return the resulting LabelArray
+     */
+    public LabelArray pickRows(Integer...indices){
+        ArrayList labels = new ArrayList();
+        for (int idx : indices){
+            labels.add(_labels_intLstN[idx]);
+        }
+        return new LabelArray(labels);
+    }
+    
     
     /* TODO:
     Matrix getLabelMatrix()
@@ -198,12 +246,13 @@ public class LabelArray {
         ArrayList<String> labels_arrList = new ArrayList <String>(Arrays.asList(labels_strArr));
         
         //LabelArray labelArray = new LabelArray(labels_arrList);
-        Integer[] temp = {1,2};
+        Integer[] temp = {1,1,1,1,1,1,1,1,1,1,1};
         LabelArray labelArray = new LabelArray(temp);
         
         labelArray.show("Test LabelArray");
         labelArray.toOneHotMatrix().show("LabelArray Matrix");
         labelArray.getEntropy().show("Entropy");
+        labelArray.getGiniImpurity().show("getGiniImpurity");
         
     }
     
